@@ -124,6 +124,24 @@ def make_context(frames, cameras):
     """
     return Context(cameras=cameras, frames=frames)
 
+def convert_raw_to_numpy(dataset_info, raw_data, path, is_jpeg=False):
+    """
+    Convert raw data (image, camera in/extrinsics) to numpy and save it
+
+    Args:
+    - dataset_info: Named tuple. An object containing metadata of GQN datasets
+    - raw_data: A scalar string Tensor. A single serialized example
+    - path: String. Path where the converted data is stored
+    - is_jpeg: 
+    """
+    features= {
+        'frames': tf.FixedLenFeature(
+            shape=dataset_info.sequence_size, dtype=tf.string),
+        'cameras': tf.FixedLenFeature(
+            shape=[dataset_info.sequence_size * 5]
+            dtype=tf.float32)
+    }
+    example = tf.parse_single_example(raw_data, features)
 
 if __name__ == '__main__':
     import sys
@@ -139,7 +157,6 @@ if __name__ == '__main__':
 
     converted_dataset_path = f'{DATASET}-torch'
 
-    # switches for converter
     convert_train = False
     convert_test = False
 
