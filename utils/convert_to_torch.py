@@ -111,5 +111,18 @@ def _get_dataset_files(dataset_info, mode, root):
 
     return [os.path.join(base, file) for file in files]
 
+def make_context(frames, cameras):
+    """
+    Generate Context named tuple using camera, frame information
+
+    Args:
+    - cameras:
+    - frames:
+
+    Returns:
+    - A Context named tuple encapsulating given information
+    """
+    return Context(cameras=cameras, frames=frames)
+
 if __name__ == '__main__':
     print(tf.__version__)
