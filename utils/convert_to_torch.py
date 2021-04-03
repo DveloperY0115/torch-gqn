@@ -135,13 +135,13 @@ def _process_frames(dataset_info, example):
     frames = tf.reshape(frames, (-1, dataset_info.sequence_size, img_dims))
     
     if (dataset_info.frame_size != 64):
-        # implement it when needed
+        # implement it when needed -> GQN takes input of fixed sizes (need interpolation!)
         print('Currently doesn\'t support images of size other than (64, 64, 3)')
         print('Aborting...')
         exit(-1)
     
     return frames
-    
+
 def _process_cameras(dataset_info, example, is_raw):
     """
     Obtain camera (in/extrinsic) data from serialized representation
