@@ -5,3 +5,6 @@
 Pytorch implementation of GQN, *Generative Query Network* proposed in the paper *Neural scene representation and rendering, Eslami et al., Science*.
 
 ![Overall Structure of GQN](./media/gqn_overall.png)
+
+# Project Roadmap
+TBD
