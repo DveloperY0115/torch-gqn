@@ -23,7 +23,16 @@ jobs:
       # Setup Miniconda for python env setup
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2.1.1
-
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+      
+      - name: Setup Conda environment  
+        run: conda env create -f environment.yaml
+      
+      - name: Verify Environment Setup
+        run: conda activate torch-gqn && python tests/env_check.py
+        
       # Show the directory layout
       - name: Show repository content
         run: ls
