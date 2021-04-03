@@ -77,113 +77,132 @@ Context = collections.namedtuple('Context', ['frames', 'cameras'])
 Query = collections.namedtuple('Query', ['context', 'query_camera'])
 TaskData = collections.namedtuple('TaskData', ['query', 'target'])
 
-def _convert_frame_data(jpeg_data):
+class TFRecordConverter:
     """
-    Convert JPEG-encoded image to a uint8 tensor
+    A class for converting serialized datasets for GQN
 
-    Args:
-    - jpeg_data: A Tensor of type string. 0-D. The JPEG-encoded image
-
-    Returns: A Tensor of type float32
+    Converts dataset in TFRecord format into ones of the users' flavor 
     """
-    decoded_frames = tf.image.decode_jpeg(jpeg_data)
-    return tf.image.convert_image_dtype(decoded_frames, dtype=tf.float32)
 
-def _get_dataset_files(dataset_info, mode, root):
-    """
-    Generates lists of files for a given dataset information
+    def __init__(dataset_info, root, mode):
+        """
+        Constructor.
 
-    Args:
-    - dataset_info: Named tuple. An object containing metadata of GQN datasets
-    - mode: String. Can be 'train' or 'test'
-    - root: String. Root directory of datasets
+        Args: 
+        - dataset_info: Named tuple. An object containing metadata of GQN datasets
+        - root: String. Root directory of datasets
+        - mode: String. Indicator for which data to be converted. Can be 'train', 'test', or 'all'
+        """
+        self.dataset_info = dataset_info
+        self.root = root
+        self.mode = mode
 
-    Returns: List of files in the dataset
-    """
-    basepath = dataset_info.basepath
-    base = os.path.join(root, basepath, mode)
+    def convert_raw_to_numpy(dataset_info, raw_data, path, is_jpeg=False):
+        """
+        Convert raw data (image, camera in/extrinsics) to numpy and save it
 
-    if mode == 'train':
-        num_files = dataset_info.train_size
-    elif mode == 'test':
-        num_files = dataset_info.test_size
+        Args:
+        - dataset_info: Named tuple. An object containing metadata of GQN datasets
+        - raw_data: A scalar string Tensor. A single serialized example
+        - path: String. Path where the converted data is stored
+        - is_jpeg: 
+        """
+        features= {
+            'frames': tf.FixedLenFeature(
+                shape=dataset_info.sequence_size, dtype=tf.string),
+            'cameras': tf.FixedLenFeature(
+                shape=[dataset_info.sequence_size * 5],
+                dtype=tf.float32)
+        }
+        example = tf.parse_single_example(raw_data, features)
 
-    # usually of form '{}-of-{}.tfrecord'
-    files = sorted(os.listdir(base))
+    def _convert_frame_data(jpeg_data):
+        """
+        Convert JPEG-encoded image to a uint8 tensor
 
-    return [os.path.join(base, file) for file in files]
+        Args:
+        - jpeg_data: A Tensor of type string. 0-D. The JPEG-encoded image
 
-def _process_frames(dataset_info, example):
-    """
-    Obtain frame data from serialized representation
+        Returns: A Tensor of type float32
+        """
+        decoded_frames = tf.image.decode_jpeg(jpeg_data)
+        return tf.image.convert_image_dtype(decoded_frames, dtype=tf.float32)
 
-    Args:
-    - dataset_info: Named tuple. An object containing metadata of GQN datasets
-    - example: Serialized TFRecord object
-    - is_jpeg: 
+    def _get_dataset_files(dataset_info, mode, root):
+        """
+        Generates lists of files for a given dataset information
 
-    Returns: A Tensor of size (B, S, W, H, C)
-    - B: Batch size
-    - S: Sequence size
-    - W: Image width
-    - H: Image height
-    - C: Number of channels  
-    """
-    frames = tf.concat(example['frames'], axis=0)
-    frames = tf.map_fn(_convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.float32, back_prop=False)
-    img_dims = tuple(dataset_info.frame_size, dataset_info.frame_size, 3)
-    frames = tf.reshape(frames, (-1, dataset_info.sequence_size, img_dims))
+        Args:
+        - dataset_info: Named tuple. An object containing metadata of GQN datasets
+        - mode: String. Can be 'train' or 'test'
+        - root: String. Root directory of datasets
+
+        Returns: List of files in the dataset
+        """
+        basepath = dataset_info.basepath
+        base = os.path.join(root, basepath, mode)
+
+        if mode == 'train':
+            num_files = dataset_info.train_size
+        elif mode == 'test':
+            num_files = dataset_info.test_size
+
+        # usually of form '{}-of-{}.tfrecord'
+        files = sorted(os.listdir(base))
+
+        return [os.path.join(base, file) for file in files]
+
+    def _process_frames(dataset_info, example):
+        """
+        Obtain frame data from serialized representation
+
+        Args:
+        - dataset_info: Named tuple. An object containing metadata of GQN datasets
+        - example: Serialized TFRecord object
+
+        Returns: A Tensor of size (B, S, W, H, C)
+        - B: Batch size
+        - S: Sequence size
+        - W: Image width
+        - H: Image height
+        - C: Number of channels  
+        """
+        frames = tf.concat(example['frames'], axis=0)
+        frames = tf.map_fn(_convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.float32, back_prop=False)
+        img_dims = tuple(dataset_info.frame_size, dataset_info.frame_size, 3)
+        frames = tf.reshape(frames, (-1, dataset_info.sequence_size, img_dims))
     
-    if (dataset_info.frame_size != 64):
-        # implement it when needed -> GQN takes input of fixed sizes (need interpolation!)
-        print('Currently doesn\'t support images of size other than (64, 64, 3)')
-        print('Aborting...')
-        exit(-1)
+        if (dataset_info.frame_size != 64):
+            # implement it when needed -> GQN takes input of fixed sizes (need interpolation!)
+            print('Currently doesn\'t support images of size other than (64, 64, 3)')
+            print('Aborting...')
+            exit(-1)
     
-    return frames
+        return frames
 
-def _process_cameras(dataset_info, example, is_raw):
-    """
-    Obtain camera (in/extrinsic) data from serialized representation
+    def _process_cameras(dataset_info, example, is_raw):
+        """
+        Obtain camera (in/extrinsic) data from serialized representation
 
-    Args:
-    - dataset_info: Named tuple. An object containing metadata of GQN datasets
-    - example: Serialized TFRecord object
-    - is_raw: 
+        Args:
+        - dataset_info: Named tuple. An object containing metadata of GQN datasets
+        - example: Serialized TFRecord object
+        - is_raw: 
 
-    Returns:
-    """
+        Returns:
+        """
 
-def make_context(frames, cameras):
-    """
-    Generate Context named tuple using camera, frame information
+    def _make_context(frames, cameras):
+        """
+        Generate Context named tuple using camera, frame information
 
-    Args:
-    - cameras:
-    - frames:
+        Args:
+        - cameras:
+        - frames:
 
-    Returns: A Context named tuple encapsulating given information
-    """
-    return Context(cameras=cameras, frames=frames)
-
-def convert_raw_to_numpy(dataset_info, raw_data, path, is_jpeg=False):
-    """
-    Convert raw data (image, camera in/extrinsics) to numpy and save it
-
-    Args:
-    - dataset_info: Named tuple. An object containing metadata of GQN datasets
-    - raw_data: A scalar string Tensor. A single serialized example
-    - path: String. Path where the converted data is stored
-    - is_jpeg: 
-    """
-    features= {
-        'frames': tf.FixedLenFeature(
-            shape=dataset_info.sequence_size, dtype=tf.string),
-        'cameras': tf.FixedLenFeature(
-            shape=[dataset_info.sequence_size * 5],
-            dtype=tf.float32)
-    }
-    example = tf.parse_single_example(raw_data, features)
+        Returns: A Context named tuple encapsulating given information
+        """
+        return Context(cameras=cameras, frames=frames)
 
 if __name__ == '__main__':
 
