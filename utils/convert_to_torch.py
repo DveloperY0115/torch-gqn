@@ -115,6 +115,14 @@ def _get_dataset_files(dataset_info, mode, root):
 
     return [os.path.join(base, file) for file in files]
 
+def _process_frames(dataset_info, example, is_jpeg=False):
+    """
+    """
+
+def _process_cameras(dataset_info, example, is_raw):
+    """
+    """
+    
 def make_context(frames, cameras):
     """
     Generate Context named tuple using camera, frame information
