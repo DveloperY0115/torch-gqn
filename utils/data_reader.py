@@ -82,7 +82,6 @@ _DATASETS = dict(
         frame_size=64,
         sequence_size=15)
 )
-
 _NUM_CHANNELS = 3
 _NUM_RAW_CAMERA_PARAMS = 5
 _MODES = ('train', 'test')
@@ -110,6 +109,7 @@ def _convert_frame_data(jpeg_data):
 
 class DataReader(object):
   """Minimal queue based TFRecord reader.
+
   You can use this reader to load the datasets used to train Generative Query
   Networks (GQNs) in the 'Neural Scene Representation and Rendering' paper.
   See README.md for a description of the datasets and an example of how to use
@@ -129,6 +129,7 @@ class DataReader(object):
                min_after_dequeue=128,
                seed=None):
     """Instantiates a DataReader object and sets up queues for data reading.
+
     Args:
       dataset: string, one of ['jaco', 'mazes', 'rooms_ring_camera',
           'rooms_free_camera_no_object_rotations',
@@ -147,6 +148,7 @@ class DataReader(object):
           RandomShuffleQueue, defualts to 128.
       seed: (optional) integer, seed for the random number generators used in
           the reader.
+
     Raises:
       ValueError: if the required version does not exist; if the required mode
          is not supported; if the requested context_size is bigger than the

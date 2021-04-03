@@ -124,5 +124,6 @@ def make_context(frames, cameras):
     """
     return Context(cameras=cameras, frames=frames)
 
+
 if __name__ == '__main__':
     print(tf.__version__)
