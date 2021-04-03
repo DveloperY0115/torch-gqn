@@ -6,5 +6,7 @@ Pytorch implementation of GQN, *Generative Query Network* proposed in the paper 
 
 ![Overall Structure of GQN](./media/gqn_overall.png)
 
-# Project Roadmap
-TBD
+# Quick Start 
+
+# Datasets
+The dataset is distributed [here](https://github.com/deepmind/gqn-datasets).
