@@ -176,9 +176,11 @@ class DataReader(object):
     self._example_size = context_size + 1
     self._custom_frame_size = custom_frame_size
 
+    self.seed = seed
+
     with tf.device('/cpu'):
       file_names = _get_dataset_files(self._dataset_info, mode, root)
-      filename_queue = tf.train.string_input_producer(file_names, seed=seed)
+      filename_queue = tf.train.string_input_producer(file_names, seed=self.seed)
       reader = tf.TFRecordReader()
 
       read_ops = [self._make_read_op(reader, filename_queue)
@@ -219,7 +221,7 @@ class DataReader(object):
             dtype=tf.float32)
     }
     example = tf.parse_example(raw_data, feature_map)
-    indices = self._get_randomized_indices(seed)
+    indices = self._get_randomized_indices(self.seed)
     frames = self._preprocess_frames(example, indices)
     cameras = self._preprocess_cameras(example, indices)
     return frames, cameras
@@ -267,4 +269,7 @@ class DataReader(object):
     return cameras
 
 if __name__ == '__main__':
-    
+    root_path = './data'
+    data_reader = DataReader(dataset='rooms_ring_camera', context_size=5, root=root_path)
+    data = data_reader.read(batch_size=12)
+    print(data)
