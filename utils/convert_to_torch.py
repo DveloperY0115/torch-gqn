@@ -74,9 +74,42 @@ Query = collections.namedtuple('Query', ['context', 'query_camera'])
 TaskData = collections.namedtuple('TaskData', ['query', 'target'])
 
 def _convert_frame_data(jpeg_data):
+    """
+    Convert JPEG-encoded image to a uint8 tensor
+
+    Args:
+    - jpeg_data: A Tensor of type string. 0-D. The JPEG-encoded image
+
+    Returns:
+    - A Tensor of type float32
+    """
     decoded_frames = tf.image.decode_jpeg(jpeg_data)
     return tf.image.convert_image_dtype(decoded_frames, dtype=tf.float32)
 
+def _get_dataset_files(dataset_info, mode, root):
+    """
+    Generates lists of files for a given dataset information
+
+    Args:
+    - dataset_info: Named tuple. An object containing metadata of GQN datasets
+    - mode: String. Can be 'train' or 'test'
+    - root: String. Root directory of datasets
+
+    Returns:
+    - List of files in the dataset
+    """
+    basepath = dataset_info.basepath
+    base = os.path.join(root, basepath, mode)
+
+    if mode == 'train':
+        num_files = dataset_info.train_size
+    elif mode == 'test':
+        num_files = dataset_info.test_size
+
+    # usually of form '{}-of-{}.tfrecord'
+    files = sorted(os.listdir(base))
+
+    return [os.path.join(base, file) for file in files]
 
 if __name__ == '__main__':
     print(tf.__version__)
