@@ -14,6 +14,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -28,13 +31,10 @@ jobs:
           environment-file: environment.yaml
           python-version: 3.7
           auto-activate-base: false
+          # display activated environment
       - run: |
           conda info
           conda list
       
       - name: Verify Environment Setup
-        run: conda init bash && conda activate torch-gqn && python tests/env_check.py
-        
-      # Show the directory layout
-      - name: Show repository content
-        run: ls
+        run: python tests/env_check.py
