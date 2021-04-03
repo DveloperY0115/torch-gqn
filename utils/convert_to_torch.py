@@ -7,6 +7,10 @@ import sys
 import collections
 import tensorflow as tf
 
+# suppress deprecation warning
+from tensorflow.python.util import deprecation
+deprecation._PRINT_DEPRECATION_WARNINGS = False
+
 BASE_DIR = '../'    # path to project root directory
 sys.path.append(BASE_DIR)
 
@@ -138,7 +142,7 @@ def convert_raw_to_numpy(dataset_info, raw_data, path, is_jpeg=False):
         'frames': tf.FixedLenFeature(
             shape=dataset_info.sequence_size, dtype=tf.string),
         'cameras': tf.FixedLenFeature(
-            shape=[dataset_info.sequence_size * 5]
+            shape=[dataset_info.sequence_size * 5],
             dtype=tf.float32)
     }
     example = tf.parse_single_example(raw_data, features)
@@ -148,7 +152,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) < 3:
         print('[!] Please specify a dataset to convert')
-        print('[!] python convert_to_torch.py dataset_name train/test/all')
+        print('[!] Command is of form: python convert_to_torch.py dataset_name train/test/all')
         print('[!] e.g. python convert_to_torch.py jaco train')
         exit()
 
