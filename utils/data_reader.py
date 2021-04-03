@@ -265,3 +265,6 @@ class DataReader(object):
     cameras = tf.concat(
         [pos, tf.sin(yaw), tf.cos(yaw), tf.sin(pitch), tf.cos(pitch)], axis=2)
     return cameras
+
+if __name__ == '__main__':
+    
