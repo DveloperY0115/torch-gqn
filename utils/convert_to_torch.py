@@ -117,12 +117,24 @@ def _get_dataset_files(dataset_info, mode, root):
 
 def _process_frames(dataset_info, example, is_jpeg=False):
     """
+    Obtain frame data from serialized representation
+
+    Args:
+    - dataset_info: Named tuple. An object containing metadata of GQN datasets
+    - example: Serialized TFRecord object
+    - is_jpeg: 
     """
 
 def _process_cameras(dataset_info, example, is_raw):
     """
+    Obtain camera (in/extrinsic) data from serialized representation
+
+    Args:
+    - dataset_info: Named tuple. An object containing metadata of GQN datasets
+    - example: Serialized TFRecord object
+    - is_raw: 
     """
-    
+
 def make_context(frames, cameras):
     """
     Generate Context named tuple using camera, frame information
