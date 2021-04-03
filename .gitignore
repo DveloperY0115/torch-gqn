@@ -2,3 +2,6 @@
 data    
 .data
 /data/
+
+# VSCode
+.vscode
