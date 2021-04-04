@@ -36,4 +36,4 @@ jobs:
           conda list
       
       - name: Run Unit Tests
-        run: cd tests/unittests && python -m unittest
+        run: cd tests/unittests && python -m unittest env_check
