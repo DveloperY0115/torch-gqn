@@ -267,9 +267,3 @@ class DataReader(object):
     cameras = tf.concat(
         [pos, tf.sin(yaw), tf.cos(yaw), tf.sin(pitch), tf.cos(pitch)], axis=2)
     return cameras
-
-if __name__ == '__main__':
-    root_path = './data'
-    data_reader = DataReader(dataset='rooms_ring_camera', context_size=5, root=root_path)
-    data = data_reader.read(batch_size=12)
-    print(data)
