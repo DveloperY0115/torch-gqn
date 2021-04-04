@@ -123,6 +123,7 @@ class TFRecordConverter:
 
         if path is not None:
             # save file to that path
+            pass
             
         return frames.numpy().squeeze(), cameras.numpy().squeeze()
 
