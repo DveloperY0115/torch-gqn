@@ -100,7 +100,7 @@ class TFRecordConverter:
         self.root = root
         self.mode = mode
 
-    def convert_raw_to_numpy(self, raw_data, path):
+    def convert_raw_to_numpy(self, raw_data, path=None):
         """
         Convert raw data (image, camera in/extrinsics) to numpy and save it
 
@@ -121,6 +121,9 @@ class TFRecordConverter:
         frames = self._process_frames(self.dataset_info, example)
         cameras = self._process_cameras(self.dataset_info, example, True)
 
+        if path is not None:
+            # save file to that path
+            
         return frames.numpy().squeeze(), cameras.numpy().squeeze()
 
     def _convert_frame_data(self, jpeg_data):
