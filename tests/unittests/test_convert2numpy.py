@@ -7,18 +7,16 @@ import sys
 import unittest
 from pathlib import Path
 import tensorflow as tf
+
+# tensorflow settings
 tf.enable_eager_execution()
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # suppress warnings
 
 # constants
 BASE_DIR = os.path.join(Path(__file__).parent.absolute(), '../../')    # path to project root directory
 TEST_DIR = os.path.join(BASE_DIR, 'data/')
 TEST_FILENAME = os.path.join(TEST_DIR, 'rooms_ring_camera/train/', '0001-of-2160.tfrecord')    # file used for testing
 OUTPUT_DIR = os.path.join(Path(__file__).parent.absolute(), '/test_outputs')
-
-print(BASE_DIR)
-print(TEST_DIR)
-print(TEST_FILENAME)
-print(OUTPUT_DIR)
 
 sys.path.append(BASE_DIR)    # append project root to import paths
 
@@ -29,7 +27,6 @@ class convert2numpyTest(unittest.TestCase):
 
     def setUp(self):
         # set up environment before test starts
-        # TODO: Fix this!
         if not os.path.exists('./test_outputs'):
             os.mkdir('./test_outputs')
         pass
@@ -49,8 +46,9 @@ class convert2numpyTest(unittest.TestCase):
 
     def tearDown(self):
         # clean environment after testing
-        pass
-
+        import shutil
+        if os.path.exists('./test_outputs'):
+            shutil.rmtree('./test_outputs')
 
 if __name__ == '__main__':
     unittest.main()
