@@ -36,5 +36,5 @@ jobs:
           conda info
           conda list
       
-      - name: Verify Environment Setup
-        run: python tests/env_check.py
+      - name: Run Unit Tests
+        run: cd tests/unittests && python -m unittest
