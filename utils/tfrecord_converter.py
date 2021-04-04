@@ -100,7 +100,7 @@ class TFRecordConverter:
         self.root = root
         self.mode = mode
 
-    def convert_raw_to_numpy(dataset_info, raw_data, path, is_jpeg=False):
+    def convert_raw_to_numpy(raw_data, path, is_jpeg=False):
         """
         Convert raw data (image, camera in/extrinsics) to numpy and save it
 
@@ -112,9 +112,9 @@ class TFRecordConverter:
         """
         features= {
             'frames': tf.FixedLenFeature(
-                shape=dataset_info.sequence_size, dtype=tf.string),
+                shape=self.dataset_info.sequence_size, dtype=tf.string),
             'cameras': tf.FixedLenFeature(
-                shape=[dataset_info.sequence_size * 5],
+                shape=[self.dataset_info.sequence_size * 5],
                 dtype=tf.float32)
         }
         example = tf.parse_single_example(raw_data, features)
@@ -131,7 +131,7 @@ class TFRecordConverter:
         decoded_frames = tf.image.decode_jpeg(jpeg_data)
         return tf.image.convert_image_dtype(decoded_frames, dtype=tf.float32)
 
-    def _get_dataset_files(dataset_info, mode, root):
+    def _get_dataset_files():
         """
         Generates lists of files for a given dataset information
 
@@ -142,13 +142,13 @@ class TFRecordConverter:
 
         Returns: List of files in the dataset
         """
-        basepath = dataset_info.basepath
-        base = os.path.join(root, basepath, mode)
+        basepath = self.dataset_info.basepath
+        base = os.path.join(self.root, basepath, self.mode)
 
-        if mode == 'train':
-            num_files = dataset_info.train_size
-        elif mode == 'test':
-            num_files = dataset_info.test_size
+        if self.mode == 'train':
+            num_files = self.dataset_info.train_size
+        elif self.mode == 'test':
+            num_files = self.dataset_info.test_size
 
         # usually of form '{}-of-{}.tfrecord'
         files = sorted(os.listdir(base))
