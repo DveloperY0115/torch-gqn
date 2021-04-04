@@ -100,7 +100,7 @@ class TFRecordConverter:
         self.root = root
         self.mode = mode
 
-    def convert_raw_to_numpy(self, raw_data, path, is_jpeg=False):
+    def convert_raw_to_numpy(self, raw_data, path):
         """
         Convert raw data (image, camera in/extrinsics) to numpy and save it
 
@@ -108,7 +108,6 @@ class TFRecordConverter:
         - dataset_info: Named tuple. An object containing metadata of GQN datasets
         - raw_data: A scalar string Tensor. A single serialized example
         - path: String. Path where the converted data is stored
-        - is_jpeg: 
         """
         features= {
             'frames': tf.FixedLenFeature(
@@ -117,7 +116,12 @@ class TFRecordConverter:
                 shape=[self.dataset_info.sequence_size * 5],
                 dtype=tf.float32)
         }
+
         example = tf.parse_single_example(raw_data, features)
+        frames = self._process_frames(self.dataset_info, example)
+        cameras = self._process_cameras(self.dataset_info, example, True)
+
+        return frames.numpy().squeeze(), cameras.numpy().squeeze()
 
     def _convert_frame_data(self, jpeg_data):
         """
@@ -171,11 +175,11 @@ class TFRecordConverter:
         - C: Number of channels  
         """
         frames = tf.concat(example['frames'], axis=0)
-        frames = tf.map_fn(_convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.uint8, back_prop=False)
-        img_dims = tuple(dataset_info.frame_size, dataset_info.frame_size, 3)
-        frames = tf.reshape(frames, (-1, dataset_info.sequence_size) + img_dims)
+        frames = tf.map_fn(self._convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.float32, back_prop=False)
+        img_dims = (self.dataset_info.frame_size, self.dataset_info.frame_size, 3)
+        frames = tf.reshape(frames, (-1, self.dataset_info.sequence_size) + img_dims)
     
-        if (dataset_info.frame_size != 64):
+        if (self.dataset_info.frame_size != 64):
             # implement it when needed -> GQN takes input of fixed sizes (need interpolation!)
             print('[!] Currently doesn\'t support images of size other than (64, 64, 3)')
             print('[!] Aborting...')
@@ -197,7 +201,7 @@ class TFRecordConverter:
         - (is_raw = False) A Tensor of shape (B, S, 7)
         """
         raw_cameras = example['cameras']
-        raw_cameras = tf.reshape(poses, (-1, dataset_info.sequence_size, _NUM_POSE_PARAMS))
+        raw_cameras = tf.reshape(raw_cameras, (-1, self.dataset_info.sequence_size, _NUM_POSE_PARAMS))
         
         if not is_raw:
             position = raw_cameras[:, :, 0:3]
@@ -209,7 +213,6 @@ class TFRecordConverter:
         else:
             return raw_cameras
         
-
     def _make_context(self, frames, cameras):
         """
         Generate Context named tuple using camera, frame information
