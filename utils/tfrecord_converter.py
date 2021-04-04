@@ -87,7 +87,7 @@ class TFRecordConverter:
     Converts dataset in TFRecord format into ones of the users' flavor 
     """
 
-    def __init__(dataset_info, root, mode):
+    def __init__(self, dataset_info, root, mode):
         """
         Constructor.
 
@@ -100,7 +100,7 @@ class TFRecordConverter:
         self.root = root
         self.mode = mode
 
-    def convert_raw_to_numpy(raw_data, path, is_jpeg=False):
+    def convert_raw_to_numpy(self, raw_data, path, is_jpeg=False):
         """
         Convert raw data (image, camera in/extrinsics) to numpy and save it
 
@@ -119,7 +119,7 @@ class TFRecordConverter:
         }
         example = tf.parse_single_example(raw_data, features)
 
-    def _convert_frame_data(jpeg_data):
+    def _convert_frame_data(self, jpeg_data):
         """
         Convert JPEG-encoded image to a uint8 tensor
 
@@ -131,7 +131,7 @@ class TFRecordConverter:
         decoded_frames = tf.image.decode_jpeg(jpeg_data)
         return tf.image.convert_image_dtype(decoded_frames, dtype=tf.float32)
 
-    def _get_dataset_files():
+    def _get_dataset_files(self):
         """
         Generates lists of files for a given dataset information
 
@@ -155,7 +155,7 @@ class TFRecordConverter:
 
         return [os.path.join(base, file) for file in files]
 
-    def _process_frames(dataset_info, example):
+    def _process_frames(self, dataset_info, example):
         """
         Obtain frame data from serialized representation
 
@@ -183,7 +183,7 @@ class TFRecordConverter:
     
         return frames
 
-    def _process_cameras(dataset_info, example, is_raw):
+    def _process_cameras(self, dataset_info, example, is_raw):
         """
         Obtain camera (in/extrinsic) data from serialized representation
 
@@ -210,7 +210,7 @@ class TFRecordConverter:
             return raw_cameras
         
 
-    def _make_context(frames, cameras):
+    def _make_context(self, frames, cameras):
         """
         Generate Context named tuple using camera, frame information
 
