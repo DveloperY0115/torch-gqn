@@ -2,10 +2,13 @@ import os
 import sys
 import unittest
 
-from ..utils.tfrecord_converter import TFRecordConverter
-
 BASE_DIR = '../'    # path to project root directory
 sys.path.append(BASE_DIR)
+
+from utils.tfrecord_converter import TFRecordConverter
+
+# file used for testing
+TEST_FILENAME = '0001-of-2160.tfrecord'
 
 class convert2numpyTest(unittest.TestCase):
 
