@@ -12,6 +12,7 @@ TEST_FILENAME = '0001-of-2160.tfrecord'
 
 class convert2numpyTest(unittest.TestCase):
 
+    # TODO: Implement this testcase and check whether the output is correct!
     def test_runs(self):
         pass
 
