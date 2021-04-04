@@ -77,6 +77,9 @@ Context = collections.namedtuple('Context', ['frames', 'cameras'])
 Query = collections.namedtuple('Query', ['context', 'query_camera'])
 TaskData = collections.namedtuple('TaskData', ['query', 'target'])
 
+# constants 
+_NUM_POSE_PARAMS = 5
+
 class TFRecordConverter:
     """
     A class for converting serialized datasets for GQN
@@ -158,9 +161,9 @@ class TFRecordConverter:
 
         Args:
         - dataset_info: Named tuple. An object containing metadata of GQN datasets
-        - example: Serialized TFRecord object
+        - example: Serialized TFRecord object.
 
-        Returns: A Tensor of size (B, S, W, H, C)
+        Returns: A UInt8 Tensor of shape (B, S, W, H, C)
         - B: Batch size
         - S: Sequence size
         - W: Image width
@@ -168,14 +171,14 @@ class TFRecordConverter:
         - C: Number of channels  
         """
         frames = tf.concat(example['frames'], axis=0)
-        frames = tf.map_fn(_convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.float32, back_prop=False)
+        frames = tf.map_fn(_convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.uint8, back_prop=False)
         img_dims = tuple(dataset_info.frame_size, dataset_info.frame_size, 3)
-        frames = tf.reshape(frames, (-1, dataset_info.sequence_size, img_dims))
+        frames = tf.reshape(frames, (-1, dataset_info.sequence_size) + img_dims)
     
         if (dataset_info.frame_size != 64):
             # implement it when needed -> GQN takes input of fixed sizes (need interpolation!)
-            print('Currently doesn\'t support images of size other than (64, 64, 3)')
-            print('Aborting...')
+            print('[!] Currently doesn\'t support images of size other than (64, 64, 3)')
+            print('[!] Aborting...')
             exit(-1)
     
         return frames
@@ -186,11 +189,26 @@ class TFRecordConverter:
 
         Args:
         - dataset_info: Named tuple. An object containing metadata of GQN datasets
-        - example: Serialized TFRecord object
-        - is_raw: 
+        - example: Serialized TFRecord object.
+        - is_raw: Boolean. If True, return raw camera data. Otherwise, process it 
 
         Returns:
+        - (is_raw = True) A Tensor of shape (B, S, 5)
+        - (is_raw = False) A Tensor of shape (B, S, 7)
         """
+        raw_cameras = example['cameras']
+        raw_cameras = tf.reshape(poses, (-1, dataset_info.sequence_size, _NUM_POSE_PARAMS))
+        
+        if not is_raw:
+            position = raw_cameras[:, :, 0:3]
+            yaw = raw_cameras[:, :, 3:4]
+            pitch = raw_cameras[:, :, 4:5]
+            cameras = tf.concat([pos, tf.sin(yaw), tf.cos(yaw), tf.sin(pitch), tf.cos(pitch)], axis=2)
+            return cameras
+        
+        else:
+            return raw_cameras
+        
 
     def _make_context(frames, cameras):
         """
