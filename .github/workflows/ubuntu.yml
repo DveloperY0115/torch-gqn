@@ -22,7 +22,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-    
+
       # Setup Miniconda for python env setup
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2.1.1
@@ -34,6 +34,6 @@ jobs:
       - run: |
           conda info
           conda list
-      
+
       - name: Run Unit Tests
         run: cd tests/unittests && python -m unittest env_check
