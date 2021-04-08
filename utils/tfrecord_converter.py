@@ -77,21 +77,21 @@ Context = collections.namedtuple('Context', ['frames', 'cameras'])
 Query = collections.namedtuple('Query', ['context', 'query_camera'])
 TaskData = collections.namedtuple('TaskData', ['query', 'target'])
 
-# constants 
+# constants
 _NUM_POSE_PARAMS = 5
 
 class TFRecordConverter:
     """
     A class for converting serialized datasets for GQN
 
-    Converts dataset in TFRecord format into ones of the users' flavor 
+    Converts dataset in TFRecord format into ones of the users' flavor
     """
 
     def __init__(self, dataset_info, root, mode):
         """
         Constructor.
 
-        Args: 
+        Args:
         - dataset_info: Named tuple. An object containing metadata of GQN datasets
         - root: String. Root directory of datasets
         - mode: String. Indicator for which data to be converted. Can be 'train', 'test', or 'all'
@@ -124,7 +124,7 @@ class TFRecordConverter:
         if path is not None:
             # save file to that path
             pass
-            
+    
         return frames.numpy().squeeze(), cameras.numpy().squeeze()
 
     def _convert_frame_data(self, jpeg_data):
