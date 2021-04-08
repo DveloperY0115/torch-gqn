@@ -25,7 +25,7 @@ if __name__ == '__main__':
     if sys.argv[2] == 'train':
         convert_train = True
         converted_dataset_train = f'{converted_dataset_path}/train'
-    
+
     elif sys.argv[2] == 'test':
         convert_test = True
         converted_dataset_test = f'{converted_dataset_path}/test'
