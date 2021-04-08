@@ -21,7 +21,7 @@ OUTPUT_DIR = os.path.join(Path(__file__).parent.absolute(), '/test_outputs')
 sys.path.append(BASE_DIR)    # append project root to import paths
 
 from utils.tfrecord_converter import TFRecordConverter
-from utils.tfrecord_converter import DatasetInfo, _DATASETS
+from utils.tfrecord_converter import _DATASETS
 
 class convert2numpyTest(unittest.TestCase):
 
@@ -29,7 +29,6 @@ class convert2numpyTest(unittest.TestCase):
         # set up environment before test starts
         if not os.path.exists('./test_outputs'):
             os.mkdir('./test_outputs')
-        pass
 
     def test_runs(self):
 
