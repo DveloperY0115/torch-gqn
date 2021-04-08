@@ -198,7 +198,7 @@ class TFRecordConverter:
         Args:
         - dataset_info: Named tuple. An object containing metadata of GQN datasets
         - example: Serialized TFRecord object.
-        - is_raw: Boolean. If True, return raw camera data. Otherwise, process it 
+        - is_raw: Boolean. If True, return raw camera data. Otherwise, process it
 
         Returns:
         - (is_raw = True) A Tensor of shape (B, S, 5)
