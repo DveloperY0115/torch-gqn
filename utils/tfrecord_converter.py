@@ -124,7 +124,7 @@ class TFRecordConverter:
         if path is not None:
             # save file to that path
             pass
-    
+
         return frames.numpy().squeeze(), cameras.numpy().squeeze()
 
     def _convert_frame_data(self, jpeg_data):
@@ -176,7 +176,7 @@ class TFRecordConverter:
         - S: Sequence size
         - W: Image width
         - H: Image height
-        - C: Number of channels  
+        - C: Number of channels
         """
         frames = tf.concat(example['frames'], axis=0)
         frames = tf.map_fn(self._convert_frame_data, tf.reshape(frames, [-1]), dtype=tf.float32, back_prop=False)
