@@ -4,9 +4,10 @@ Converts selected data to Pytorch compatible formats (e.g. Numpy arrays, etc...)
 TODO: Implement this when necessary
 """
 
-if __name__ == '__main__':
+import os
+import sys
 
-    import sys
+if __name__ == '__main__':
 
     if len(sys.argv) < 3:
         print('[!] Please specify a dataset to convert')
@@ -29,7 +30,7 @@ if __name__ == '__main__':
     elif sys.argv[2] == 'test':
         convert_test = True
         converted_dataset_test = f'{converted_dataset_path}/test'
-    
+
     elif sys.argv[2] == 'all':
         convert_train = True
         convert_test = True
