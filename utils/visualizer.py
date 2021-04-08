@@ -17,7 +17,7 @@ class Visualizer:
 
         Args:
         - imgs: A set of images (types can vary)
-        - row: Int. Number of images in one row 
+        - row: Int. Number of images in one row
         """
         fig, axs = plt.subplots(nrows=row, ncols=col)
 
@@ -44,4 +44,4 @@ class Visualizer:
     def _show_numpy(self, array):
         imgplot = plt.imshow(array)
         plt.show()
-        pass
+        
