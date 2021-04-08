@@ -39,9 +39,7 @@ class Visualizer:
         # if input is Numpy array
         if isinstance(img, np.ndarray):
             self._show_numpy(img)
-        pass
 
     def _show_numpy(self, array):
         imgplot = plt.imshow(array)
         plt.show()
-        
