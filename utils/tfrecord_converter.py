@@ -211,7 +211,7 @@ class TFRecordConverter:
             position = raw_cameras[:, :, 0:3]
             yaw = raw_cameras[:, :, 3:4]
             pitch = raw_cameras[:, :, 4:5]
-            cameras = tf.concat([pos, tf.sin(yaw), tf.cos(yaw), tf.sin(pitch), tf.cos(pitch)], axis=2)
+            cameras = tf.concat([position, tf.sin(yaw), tf.cos(yaw), tf.sin(pitch), tf.cos(pitch)], axis=2)
             return cameras
         
         else:
