@@ -20,9 +20,16 @@ from models.representation import PyramidCls, TowerCls, PoolCls
 class TowerClsTest(unittest.TestCase):
 
     def test_runs(self):
-        
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = TowerCls().to(device)
+
+        summary(model, [(64, 64, 3), (1, 1, 7)])
+
+class PoolClsTest(unittest.TestCase):
+
+    def test_runs(self):
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model = PoolCls().to(device)
 
         summary(model, [(64, 64, 3), (1, 1, 7)])
 
