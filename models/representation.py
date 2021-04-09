@@ -13,8 +13,19 @@ class PyramidCls(nn.Module):
 
         super(PyramidCls, self).__init__()
 
-    def forward(self, x):
+
+    def forward(self, x, y):
+        """
+        Forward propagation
+
+        Args:
+        - x: A Tensor of shape (B, W, H, C). Batch of images
+        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+
+        Returns:
+        """
         pass
+
 
 class TowerCls(nn.Module):
 
@@ -25,8 +36,19 @@ class TowerCls(nn.Module):
 
         super(TowerCls, self):__init__()
 
-    def forward(self, x):
+
+    def forward(self, x, y):
+        """
+        Forward propagation
+
+        Args:
+        - x: A Tensor of shape (B, W, H, C). Batch of images
+        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+
+        Returns:
+        """
         pass
+
 
 class PoolCls(nn.Module):
 
@@ -37,5 +59,15 @@ class PoolCls(nn.Module):
 
         super(PoolCls, self).__init__()
 
-    def forward(self, x):
+
+    def forward(self, x, y):
+        """
+        Forward propagation
+
+        Args:
+        - x: A Tensor of shape (B, W, H, C). Batch of images
+        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+
+        Returns: 
+        """
         pass
