@@ -30,5 +30,15 @@ class GQNCls(nn.Module):
         self.gen_net = GenerationCls()
 
 
-    def forward(self, x):
-        pass
+    def forward(self, x, y, q):
+        """
+        Forward propagation
+
+        Args:
+        - x: A Tensor of shape (B, W, H, C). Batch of images
+        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+        - q: A Tensor of shape (?, 1, 1, 7). (Batch of) query viewpoints
+
+        Returns: A Tensor of shape (?, W, H, C). (Batch of) predicted images at query viewpoints
+        """
+        return self.gen_net(self.repr_net(x, y), q)
