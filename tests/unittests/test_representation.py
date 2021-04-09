@@ -1,5 +1,5 @@
 """
-
+Unit test for representation architectures of GQN
 """
 
 import os
