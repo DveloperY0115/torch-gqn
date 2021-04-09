@@ -66,7 +66,7 @@ class TowerCls(nn.Module):
         - x: A Tensor of shape (B, W, H, C). Batch of images
         - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
 
-        Returns:
+        Returns: A Tensor of shape (B, 256, 16, 16)
         """
 
         if not torch.is_tensor(x):
@@ -104,24 +104,31 @@ class TowerCls(nn.Module):
         return x
 
 
-class PoolCls(nn.Module):
+class PoolCls(TowerCls):
 
     def __init__(self):
         """
         Pool architecture for scene representation
         """
 
-        super(PoolCls, self).__init__()
+        super().__init__()
 
+        self.pooling = nn.AvgPool2d(kernel_size=16, stride=1)
 
     def forward(self, x, y):
         """
         Forward propagation
 
+        Same as that of Tower, but average pooling applied in the end
+
         Args:
         - x: A Tensor of shape (B, W, H, C). Batch of images
         - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
 
-        Returns: 
+        Returns: A Tensor of shape (B, 256, 1, 1)
         """
-        pass
+        
+        x = super().forward(x, y)
+        x = self.pooling(x)
+
+        return x
