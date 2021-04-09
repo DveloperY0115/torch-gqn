@@ -21,6 +21,11 @@ class PyramidCls(nn.Module):
         self.conv_3 = nn.Conv2d(64, 128, kernel_size=2, stride=2)
         self.conv_4 = nn.Conv2d(128, 256, kernel_size=8, stride=8)
 
+        # Batch Norm layers
+        self.bn_1 = nn.BatchNorm2d(32)
+        self.bn_2 = nn.BatchNorm2d(64)
+        self.bn_3 = nn.BatchNorm2d(128)
+        self.bn_4 = nn.BatchNorm2d(256)
 
     def forward(self, x, y):
         """
@@ -30,9 +35,29 @@ class PyramidCls(nn.Module):
         - x: A Tensor of shape (B, W, H, C). Batch of images
         - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
 
-        Returns:
+        Returns: A Tensor of shape (B, 256, 1, 1)
         """
-        pass
+        
+        if not torch.is_tensor(x):
+            x = torch.Tensor(x)
+
+        if not torch.is_tensor(y):
+            y = torch.Tensor(y)
+
+        x = x.transpose(1, 3)    # x.shape = (B, 3, 64, 64)
+
+        # Concatenate view point information
+        y = y.transpose(1, 3)
+        y = y.repeat(1, 1, 64, 64)    # y.shape = (B, 7, 64, 64)
+
+        x = torch.cat((x, y), dim=1)
+
+        x = F.relu(self.bn_1(self.conv_1(x)))
+        x = F.relu(self.bn_2(self.conv_2(x)))
+        x = F.relu(self.bn_3(self.conv_3(x)))
+        x = F.relu(self.bn_4(self.conv_4(x)))
+
+        return x
 
 
 class TowerCls(nn.Module):
