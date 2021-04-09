@@ -15,6 +15,12 @@ class PyramidCls(nn.Module):
 
         super(PyramidCls, self).__init__()
 
+        # Conv layers
+        self.conv_1 = nn.Conv2d(10, 32, kernel_size=2, stride=2)
+        self.conv_2 = nn.Conv2d(32, 64, kernel_size=2, stride=2)
+        self.conv_3 = nn.Conv2d(64, 128, kernel_size=2, stride=2)
+        self.conv_4 = nn.Conv2d(128, 256, kernel_size=8, stride=8)
+
 
     def forward(self, x, y):
         """
