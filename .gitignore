@@ -6,6 +6,9 @@ data
 # VSCode
 .vscode
 
+# specific code
+tests/unittests/test_convert2numpy.py
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
