@@ -115,6 +115,7 @@ dependencies:
   - torchaudio=0.8.1=py37
   - torchvision=0.9.1=py37_cu111
   - tornado=6.1=py37h27cfd23_0
+  - tqdm=4.59.0=pyhd3eb1b0_1
   - traitlets=5.0.5=pyhd3eb1b0_0
   - typing_extensions=3.7.4.3=pyha847dfd_0
   - wcwidth=0.2.5=py_0
@@ -128,5 +129,10 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.9=ha95c52a_0
   - pip:
+    - chardet==4.0.0
+    - idna==2.10
+    - requests==2.25.1
     - tfrecord==1.11
+    - torchsummary==1.5.1
+    - urllib3==1.26.4
 prefix: /home/ubuntu/anaconda3/envs/torch-gqn
