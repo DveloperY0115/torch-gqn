@@ -36,7 +36,7 @@ class TowerCls(nn.Module):
         Tower architecture for scene representation
         """
 
-        super(TowerCls, self):__init__()
+        super(TowerCls, self).__init__()
 
         # Conv layers
         self.conv_1 = nn.Conv2d(3, 256, kernel_size=2, stride=2)
@@ -56,7 +56,7 @@ class TowerCls(nn.Module):
         self.bn_3 = nn.BatchNorm2d(256)
         self.bn_4 = nn.BatchNorm2d(128)
         self.bn_5 = nn.BatchNorm2d(256)
-        self.bn_6 = nn.BatchNorm2d(256) -> should it be used..?
+        self.bn_6 = nn.BatchNorm2d(256)
 
     def forward(self, x, y):
         """
@@ -86,8 +86,8 @@ class TowerCls(nn.Module):
         x = F.relu(self.bn_3(self.conv_3(x) + skip))    # x.shape = (B, 256, 16, 16)
 
         # Concatenate view point information
-        y = y.repeat(16, 16, 0)    # y.shape = (B, 16, 16, 7)
-        y = y.transpose(1, 3)    # y.shape = (B, 7, 16, 16)
+        y = y.transpose(1, 3)    # y.shape = (B, 7, 1, 1)
+        y = y.repeat(1, 1, 16, 16)    # y.shape = (B, 7, 16, 16)
         
         x = torch.cat((x, y), dim=1)    # x.shape = (B, 263, 16, 16)
 
