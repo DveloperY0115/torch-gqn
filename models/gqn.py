@@ -7,7 +7,7 @@ from generation import GenerationCls
 
 class GQNCls(nn.Module):
 
-    def __init__(self, repr_architecture='Pool'):
+    def __init__(self, repr_architecture='Tower'):
         """
         Entire GQN architecture formed by combining
         representation network and generation network
