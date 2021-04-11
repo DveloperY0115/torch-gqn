@@ -106,21 +106,21 @@ class TowerCls(nn.Module):
         if not torch.is_tensor(y):
             y = torch.Tensor(y)
 
-        x = x.transpose(1, 3)    # x.shape = (B, C, H, W)
+        x = x.transpose(1, 3)
 
-        x = F.relu(self.bn_1(self.conv_1(x)))    # x.shape = (B, 256, 32, 32)
+        x = F.relu(self.bn_1(self.conv_1(x)))
 
         # Residual connection
-        skip = self.conv_skip_1(x)    # skip.shape = (B, 256, 16, 16)
+        skip = self.conv_skip_1(x)
 
-        x = F.relu(self.bn_2(self.conv_2(x)))    # x.shape = (B, 128, 32, 32)
-        x = F.relu(self.bn_3(self.conv_3(x) + skip))    # x.shape = (B, 256, 16, 16)
+        x = F.relu(self.bn_2(self.conv_2(x)))
+        x = F.relu(self.bn_3(self.conv_3(x) + skip))
 
         # Concatenate view point information
-        y = y.transpose(1, 3)    # y.shape = (B, 7, 1, 1)
-        y = y.repeat(1, 1, 16, 16)    # y.shape = (B, 7, 16, 16)
+        y = y.transpose(1, 3)
+        y = y.repeat(1, 1, 16, 16)
 
-        x = torch.cat((x, y), dim=1)    # x.shape = (B, 263, 16, 16)
+        x = torch.cat((x, y), dim=1)
 
         # Residual connection
         skip = self.conv_skip_2(x)
