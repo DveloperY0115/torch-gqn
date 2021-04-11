@@ -37,7 +37,7 @@ class PyramidCls(nn.Module):
 
         Returns: A Tensor of shape (B, 256, 1, 1)
         """
-        
+
         if not torch.is_tensor(x):
             x = torch.Tensor(x)
 
