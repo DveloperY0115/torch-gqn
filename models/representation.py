@@ -119,7 +119,7 @@ class TowerCls(nn.Module):
         # Concatenate view point information
         y = y.transpose(1, 3)    # y.shape = (B, 7, 1, 1)
         y = y.repeat(1, 1, 16, 16)    # y.shape = (B, 7, 16, 16)
-        
+
         x = torch.cat((x, y), dim=1)    # x.shape = (B, 263, 16, 16)
 
         # Residual connection

@@ -25,6 +25,7 @@ class ConvLSTMCls(nn.Module):
         self.output_conv = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
         self.skip_conv = nn.Conv2d(256, out_channels, kernel_size=4, stride=4)
     
+
     def forward(self, q, r, z, hidden_in, cell_in, skip_in):
         """
         Forward propagation
@@ -49,6 +50,6 @@ class ConvLSTMCls(nn.Module):
 
         cell = forget_gate * cell_in + input_gate
         hidden = output_gate * torch.tanh(cell)
-        skip = self.skip_conv(hidden) + skip_in 
+        skip = self.skip_conv(hidden) + skip_in
 
         return (hidden, cell, skip)

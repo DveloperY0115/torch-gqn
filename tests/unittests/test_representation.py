@@ -18,7 +18,7 @@ sys.path.append(BASE_DIR)    # append project root to import paths
 from models.representation import PyramidCls, TowerCls, PoolCls
 
 class PyramidClsTest(unittest.TestCase):
- 
+
     def test_runs(self):
         print('----------< Testing PyramidCls >---------')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
