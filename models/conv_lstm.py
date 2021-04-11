@@ -44,7 +44,7 @@ class ConvLSTMCls(nn.Module):
         x = torch.cat((hidden_in, q, r, z), dim=1)
 
         forget_gate = torch.sigmoid(self.forget_conv(x))
-        input_gate = torch.sigmoid(self.input_conv_1(x)) * F.tanh(self.input_conv_2(x))
+        input_gate = torch.sigmoid(self.input_conv_1(x)) * torch.tanh(self.input_conv_2(x))
         output_gate = torch.sigmoid(self.output_conv(x))
 
         cell = forget_gate * cell_in + input_gate
