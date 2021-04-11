@@ -19,13 +19,18 @@ class GQNCls(nn.Module):
         super(GQNCls, self).__init__()
 
         # initialize representation network
-        architectures = {'Pyramid': PyramidCls, 'Tower': TowerCls, 'Pool', PoolCls}
+        architectures = ['Pyramid', 'Tower', 'Pool']
 
-        if repr_architecture not in architectures.keys():
+        if repr_architecture not in architectures:
             raise ValueError('[!] Representation network can be \'Pyramid\', \'Tower\', or \'Pool\'.')
 
-        self.repr_net = architectures[repr_architecture]()
-        
+        if repr_architecture == 'Pyramid':
+            self.repr_net = PyramidCls()
+        elif repr_architecture == 'Tower':
+            self.repr_net = TowerCls()
+        else:
+            self.repr_net = PoolCls()
+
         # initialize generation network
         self.gen_net = GenerationCls()
 
