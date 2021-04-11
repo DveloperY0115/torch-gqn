@@ -15,7 +15,7 @@ BASE_DIR = os.path.join(Path(__file__).parent.absolute(), '../../')    # path to
 
 sys.path.append(BASE_DIR)    # append project root to import paths
 
-from models.generation import ConvLSTM, GenerationCls
+from models.generation import ConvLSTMCls, GenerationCls
 
 class ConvLSTMClsTest(unittest.TestCase):
 
