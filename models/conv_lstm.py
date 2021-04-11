@@ -7,13 +7,14 @@ import torch.nn as nn
 
 class ConvLSTMCls(nn.Module):
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, skip_out_channels):
         """
         Convolutional LSTM block for generation network
 
         Args:
         - in_channels: Int. Number of channels of the input of Conv2D
         - out_channels: Int. Number of channels of the result of Conv2D
+        - skip_out_channels: Int. Number of channels of the result of transposed Conv2D in skip connection
         """
 
         super(ConvLSTMCls, self).__init__()
@@ -23,7 +24,9 @@ class ConvLSTMCls(nn.Module):
         self.input_conv_1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
         self.input_conv_2 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
         self.output_conv = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
-        self.skip_conv = nn.Conv2d(256, out_channels, kernel_size=4, stride=4)
+
+        # Conv layer for skip-connection
+        self.skip_conv = nn.ConvTranspose2d(out_channels, skip_out_channels, kernel_size=4, stride=4)
     
 
     def forward(self, q, r, z, hidden_in, cell_in, skip_in):
@@ -32,7 +35,7 @@ class ConvLSTMCls(nn.Module):
 
         Args:
         - q:
-        - r: A Tensor of shape (B, C, W, H). It contains scene representation
+        - r: A Tensor of shape (B, C, W, H). Contains scene representation
         - z:
         - hidden_in:
         - cell_in:

@@ -24,7 +24,7 @@ class ConvLSTMClsTest(unittest.TestCase):
         print('----------< Testing ConvLSTMCls >---------')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        model = ConvLSTMCls(256 * 2 + 128 + 7, 256).to(device)
+        model = ConvLSTMCls(256 * 2 + 128 + 7, 256, 128).to(device)
 
         # (dummy) input shapes for testing -> may behave differently in action
         query_shape = (7, 16, 16)    # should the cell remember query then how should we modify it?
@@ -32,7 +32,7 @@ class ConvLSTMClsTest(unittest.TestCase):
         latent_shape = (128, 16, 16)
         hidden_in_shape = (256, 16, 16)
         cell_in_shape = (256, 16, 16)
-        skip_in_shape = (256, 4, 4)
+        skip_in_shape = (128, 64, 64)
 
         summary(model, [query_shape, repr_shape, latent_shape, hidden_in_shape, cell_in_shape, skip_in_shape])
 
