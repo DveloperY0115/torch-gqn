@@ -44,11 +44,11 @@ class PyramidCls(nn.Module):
         if not torch.is_tensor(y):
             y = torch.Tensor(y)
 
-        x = x.transpose(1, 3)    # x.shape = (B, 3, 64, 64)
+        x = x.transpose(1, 3)
 
         # Concatenate view point information
         y = y.transpose(1, 3)
-        y = y.repeat(1, 1, 64, 64)    # y.shape = (B, 7, 64, 64)
+        y = y.repeat(1, 1, 64, 64)
 
         x = torch.cat((x, y), dim=1)
 
