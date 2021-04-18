@@ -1,5 +1,5 @@
 """
-Generation network of GQN
+Convolutional LSTM cell
 """
 
 import torch
