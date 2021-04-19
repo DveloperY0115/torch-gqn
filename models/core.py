@@ -17,7 +17,10 @@ class GenerationCore(nn.Module):
         super(GenerationCore, self).__init__()
 
         self.upsample_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
-        self.conv_lstm = ConvLSTMCls()
+        self.upsample_r = nn.ConvTranspose2d(256, 256, kernel_size=16, stride=16, padding=0, bias=False)
+
+        # TODO: Determine the number of channels of 'z'
+        self.conv_lstm = ConvLSTMCls(7+256+128+128, 128, 128)
 
     def forward(self, q, r, z, hidden_in, cell_in, skip_in):
         """
@@ -42,8 +45,12 @@ class GenerationCore(nn.Module):
         # upsample or downsample data if needed
         q = self.upsample_q(q)    # (B, 7, 1, 1) -> (B, 7, 16, 16)
         
-        pass
+        if r.size(2) == 1:
+            r = self.upsample_r(r)    # if 'Pool' architecture was used in representation core, upsample
+        
+        hidden, cell, skip = self.conv_lstm(q, r, z, hidden_in, cell_in, skip_in)
 
+        return hidden, cell, skip 
 
 class InferenceCore(nn.Module):
 
