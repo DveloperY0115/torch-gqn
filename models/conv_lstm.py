@@ -34,7 +34,7 @@ class ConvLSTMCls(nn.Module):
         Forward propagation
 
         Args:
-        - q:
+        - q: A Tensor of shape (B, 7, 1, 1). Camera extrinsics of query view point
         - r: A Tensor of shape (B, C, W, H). Contains scene representation
         - z:
         - hidden_in:
