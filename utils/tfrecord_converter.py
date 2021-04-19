@@ -184,10 +184,10 @@ class TFRecordConverter:
         frames = tf.reshape(frames, (-1, self.dataset_info.sequence_size) + img_dims)
 
         if (self.dataset_info.frame_size != 64):
-            # implement it when needed -> GQN takes input of fixed sizes (need interpolation!)
-            print('[!] Currently doesn\'t support images of size other than (64, 64, 3)')
-            print('[!] Aborting...')
-            exit(-1)
+           frames = tf.reshape(frames, (-1, ) + img_dims)    # (B * S, W, H, C)
+           default_img_dims = (64, 64, 3)
+           frames = tf.image.resize_bilinear(frames, default_img_dims[:2], align_corners=True)
+           frames = tf.reshape(frames, (-1, self.dataset_info.sequence_size) + default_img_dims)
     
         return frames
 
