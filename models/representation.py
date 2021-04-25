@@ -35,7 +35,7 @@ class PyramidCls(nn.Module):
         - x: A Tensor of shape (B, W, H, C). Batch of images
         - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
 
-        Returns: A Tensor of shape (B, 256, 1, 1)
+        Returns: A Tensor of shape (1, 256, 1, 1)
         """
 
         if not torch.is_tensor(x):
@@ -57,6 +57,10 @@ class PyramidCls(nn.Module):
         x = F.relu(self.bn_3(self.conv_3(x)))
         x = F.relu(self.bn_4(self.conv_4(x)))
 
+        # aggregate representation from different observations into one
+        x = torch.sum(x, dim=0, keepdim=True)
+
+        # x.shape = (1, 256, 16, 16)
         return x
 
 
@@ -97,7 +101,7 @@ class TowerCls(nn.Module):
         - x: A Tensor of shape (B, W, H, C). Batch of images
         - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
 
-        Returns: A Tensor of shape (B, 256, 16, 16)
+        Returns: A Tensor of shape (1, 256, 16, 16)
         """
 
         if not torch.is_tensor(x):
@@ -131,7 +135,10 @@ class TowerCls(nn.Module):
 
         x = F.relu(self.bn_6(self.conv_6(x)))
 
-        # x.shape = (B, 256, 16, 16)
+        # aggregate representation from different observations into one
+        x = torch.sum(x, dim=0, keepdim=True)
+
+        # x.shape = (1, 256, 16, 16)
         return x
 
 
@@ -156,10 +163,14 @@ class PoolCls(TowerCls):
         - x: A Tensor of shape (B, W, H, C). Batch of images
         - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
 
-        Returns: A Tensor of shape (B, 256, 1, 1)
+        Returns: A Tensor of shape (1, 256, 1, 1)
         """
         
         x = super().forward(x, y)
         x = self.pooling(x)
 
+        # aggregate representation from different observations into one
+        x = torch.sum(x, dim=0, keepdim=True)
+
+        # x.shape = (1, 256, 16, 16)
         return x
