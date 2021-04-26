@@ -82,7 +82,6 @@ TaskData = collections.namedtuple('TaskData', ['query', 'target'])
 # constants
 _NUM_POSE_PARAMS = 5
 
-
 def convert_raw_to_torch(dataset_info, raw_data, path=None):
     """
     Convert raw data (image, camera in/extrinsics) to numpy and save it
