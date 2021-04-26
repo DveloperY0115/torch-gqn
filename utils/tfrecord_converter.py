@@ -104,9 +104,6 @@ def convert_raw_to_numpy(dataset_info, raw_data, path=None):
     frames = _process_frames(dataset_info, example)
     cameras = _process_cameras(dataset_info, example, True)
 
-    with tf.train.SingularMonitoredSession() as sess:
-        frames = sess.run(frames)
-        cameras = sess.run(cameras)
     context = _make_context(frames, cameras)
 
     if path is not None:
@@ -205,7 +202,7 @@ def _process_cameras(dataset_info, example, is_raw):
     else:
         return raw_cameras
         
-def _make_context(self, frames, cameras):
+def _make_context(frames, cameras):
     """
     Generate Context named tuple using camera, frame information
 
