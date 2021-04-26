@@ -50,6 +50,7 @@ class ConvLSTMCls(nn.Module):
         # concatenate inputs along C dimension
 
         # distribute representation information over batch
+        # TODO: Determine the batch size (Hmm..)
         batch_size = 
         
         r = torch.repeat()
