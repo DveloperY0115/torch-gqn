@@ -3,6 +3,7 @@ import torch
 import pickle
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
+import random
 
 class RoomsRingCameraDataset(Dataset):
     """
@@ -58,4 +59,19 @@ class RoomsRingCameraDataset(Dataset):
         return frames, cameras
 
 
-# def sample_from_batch(frame_batch, camera_batch)
+def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observations=5, seed=None):
+    random.seed(seed)
+
+    if dataset == 'Room':
+        num_frames = 5
+    
+    if not num_observations:
+        num_observations = random.randint(1, num_frames)
+
+    context_idx = random.sample(range(frame_batch.size(1)), num_observations)
+    query_idx = random.randint(0, frame_batch.size(1)-1)
+
+    x, v = frame_batch[:, context_idx], camera_batch[:, context_idx]
+    x_q, v_q = frame_batch[:, query_idx], camera_batch[:, query_idx]
+
+    return x, v, x_q, v_q
