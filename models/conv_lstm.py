@@ -35,7 +35,7 @@ class ConvLSTMCls(nn.Module):
 
         Args:
         - q: A Tensor of shape (B, 7, 1, 1). Camera extrinsics of query view point
-        - r: A Tensor of shape (B, C, W, H). Contains scene representation. Usually of shape (B, 256, 16, 16) or (B, 256, 1, 1)
+        - r: A Tensor of shape (1, C, W, H). Contains scene representation. Usually of shape (1, 256, 16, 16) or (1, 256, 1, 1)
         - z: A Tensor of shape (B, C, 16, 16). Upsampled latent vector from inference architecture
         - hidden_in: A Tensor of shape (B, C, W, H). Hidden variable from previous ConvLSTM cell. Usually of shape (B, 256, 16, 16)
         - cell_in: A Tensor of shape (B, C, W, H). Cell state from previous ConvLSTM cell. Usually of shape (B, 256, 16, 16)
@@ -48,6 +48,11 @@ class ConvLSTMCls(nn.Module):
         """
         
         # concatenate inputs along C dimension
+
+        # distribute representation information over batch
+        batch_size = 
+        
+        r = torch.repeat()
         x = torch.cat((hidden_in, q, r, z), dim=1)
 
         forget_gate = torch.sigmoid(self.forget_conv(x))
