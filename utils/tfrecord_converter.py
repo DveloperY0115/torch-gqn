@@ -5,7 +5,7 @@ Script for converting TFRecord format to Pytorch compatible formats
 import os
 import sys
 import collections
-import gzip
+import pickle
 import torch
 import tensorflow as tf
 
@@ -82,7 +82,7 @@ TaskData = collections.namedtuple('TaskData', ['query', 'target'])
 # constants
 _NUM_POSE_PARAMS = 5
 
-def convert_raw_to_torch(dataset_info, raw_data, path=None):
+def convert_raw_to_numpy(dataset_info, raw_data, path=None):
     """
     Convert raw data (image, camera in/extrinsics) to numpy and save it
 
@@ -103,13 +103,13 @@ def convert_raw_to_torch(dataset_info, raw_data, path=None):
     frames = _process_frames(dataset_info, example)
     cameras = _process_cameras(dataset_info, example, True)
 
-    context = _make_context(frames, cameras)
+    context = _make_context(frames.numpy().squeeze(), cameras.numpy().squeeze())
 
     if path is not None:
-        with gzip.open(path, 'wb') as f:
-            torch.save(context, f)
+        with open(path, 'wb') as f:
+            pickle.dump(context, f)
 
-    return frames.numpy().squeeze(), cameras.numpy().squeeze()
+    # return frames.numpy().squeeze(), cameras.numpy().squeeze()
 
 def _convert_frame_data(jpeg_data):
     """
@@ -123,7 +123,7 @@ def _convert_frame_data(jpeg_data):
     decoded_frames = tf.image.decode_jpeg(jpeg_data)
     return tf.image.convert_image_dtype(decoded_frames, dtype=tf.float32)
 
-def _get_dataset_files(dataset_info, mode, root):
+def get_dataset_files(dataset_info, mode, root):
     """
     Generates lists of files for a given dataset information
 

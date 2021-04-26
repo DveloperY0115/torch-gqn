@@ -26,7 +26,7 @@ def main():
 
     dataset_info = _DATASETS[DATASET]
 
-    converted_dataset_path = f'{DATASET}-torch'
+    converted_dataset_path = f'{DATASET}_torch'
     converted_dataset_train = f'{converted_dataset_path}/train'
     converted_dataset_test = f'{converted_dataset_path}/test'
 
@@ -38,13 +38,13 @@ def main():
         os.mkdir(converted_dataset_test)
 
     # convert training data
-    files = _get_dataset_files(dataset_info, 'train', './')
+    files = get_dataset_files(dataset_info, 'train', '.')
 
     tot = 0
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
         for i, raw_data in enumerate(engine):
-            converted_file = os.path.join(converted_dataset_train, f'{tot+i}.pt.gz')
+            converted_file = os.path.join(converted_dataset_train, f'{tot+i}.p')
             print(f' [-] converting scene {file}-{i} into {converted_file}')
             p = Process(target=convert_raw_to_numpy, args=(dataset_info, raw_data, converted_file))
             p.start()
@@ -54,13 +54,13 @@ def main():
     print(f' [-] Converted total {tot} contexts in the training set')
 
     # convert test data
-    files = _get_dataset_files(dataset_info, 'test', './')
+    files = get_dataset_files(dataset_info, 'test', '.')
 
     tot = 0
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
         for i, raw_data in enumerate(engine):
-            converted_file = os.path.join(converted_dataset_test, f'{tot+i}.pt.gz')
+            converted_file = os.path.join(converted_dataset_test, f'{tot+i}.p')
             print(f' [-] converting scene {file}-{i} into {converted_file}')
             p = Process(target=convert_raw_to_numpy, args=(dataset_info, raw_data, converted_file))
             p.start()
