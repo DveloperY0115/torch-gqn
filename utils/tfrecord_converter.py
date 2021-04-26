@@ -8,6 +8,7 @@ import collections
 import pickle
 import torch
 import tensorflow as tf
+tf.enable_eager_execution()
 
 # suppress deprecation warning
 from tensorflow.python.util import deprecation
@@ -103,7 +104,7 @@ def convert_raw_to_numpy(dataset_info, raw_data, path=None):
     frames = _process_frames(dataset_info, example)
     cameras = _process_cameras(dataset_info, example, True)
 
-    context = _make_context(frames.numpy().squeeze(), cameras.numpy().squeeze())
+    context = [frames.numpy().squeeze(), cameras.numpy().squeeze()]
 
     if path is not None:
         with open(path, 'wb') as f:
