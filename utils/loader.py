@@ -40,7 +40,8 @@ class RoomsRingCameraDataset(Dataset):
 
         scene_file = os.path.join(self.root, f"{idx}.p")
         
-        context = pickle.load(scene_file, 'rb')
+        with open(scene_file, 'rb') as file:
+            context = pickle.load(file)
 
         frames = context[0]    # 0th element holds frame data
         cameras = context[1]    # 1st element holds camera extrinsics
@@ -55,3 +56,6 @@ class RoomsRingCameraDataset(Dataset):
         cameras = torch.cat(cameras, dim=-1)
 
         return frames, cameras
+
+
+# def sample_from_batch(frame_batch, camera_batch)
