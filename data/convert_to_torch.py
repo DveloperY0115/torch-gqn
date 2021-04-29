@@ -79,7 +79,7 @@ def main():
 
         # restrict the number of data samples -> 200 Thousand
         if (tot == 200000):
-            print(f' [-] Converted total {tot} contexts in the training set')
+            print(f' [-] Converted total {tot} contexts in the test set')
             break
         
 if __name__ == '__main__':
