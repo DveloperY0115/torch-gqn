@@ -4,7 +4,6 @@ Generation & Inference cores for GQN
 
 import torch
 import torch.nn as nn
-from torch.nn import functional as F
 from .conv_lstm import ConvLSTMCls
 
 
@@ -14,7 +13,6 @@ class GenerationCore(nn.Module):
         """
         Generation core of GQN
         """
-
         super(GenerationCore, self).__init__()
 
         self.upsample_v_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
@@ -23,7 +21,7 @@ class GenerationCore(nn.Module):
         # used to generate skip connection in generation architecture
         self.upsample_h = nn.ConvTranspose2d(128, 128, kernel_size=4, stride=4, padding=0, bias=False)
 
-    def forward(self, v_q, r, z, hidden_in, cell_in, skip_in):
+    def forward(self, v_q, r, z, hidden_g, cell_g, u):
         """
         Forward propagation
 
@@ -49,10 +47,10 @@ class GenerationCore(nn.Module):
         if r.size(2) == 1:    # (B, 256, 1, 1) -> (B, 256, 16, 16)
             r = self.upsample_r(r)    # if 'Pyramid' or 'Pool' architecture, up-sample the images
 
-        hidden_g, cell_g = self.core(torch.cat((v_q, r, z),  dim=1), (hidden_in, cell_in))
-        skip_g = self.upsample_h(hidden_g) + skip_in
+        hidden_g, cell_g = self.core(torch.cat((v_q, r, z),  dim=1), (hidden_g, cell_g))
+        u = self.upsample_h(hidden_g) + u
 
-        return hidden_g, cell_g, skip_g
+        return hidden_g, cell_g, u
 
 
 class InferenceCore(nn.Module):
@@ -61,22 +59,22 @@ class InferenceCore(nn.Module):
         """
         Inference core of GQN
         """
-
         super(InferenceCore, self).__init__()
 
         self.downsample_x_q = nn.Conv2d(3, 3, kernel_size=4, stride=4, padding=0, bias=False)
         self.upsample_v_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
         self.upsample_r = nn.ConvTranspose2d(256, 256, kernel_size=16, stride=16, padding=0, bias=False)
+        self.downsample_ = nn.Conv2d(128, 128, kernel_size=4, stride=4, padding=0, bias=False)
         self.core = ConvLSTMCls(7+3+256+128+128, 128, kernel_size=5, stride=1, padding=2)
 
-    def forward(self, v_q, x_q, r, hidden_g, hidden_in, cell_in):
+    def forward(self, v_q, x_q, r, hidden_g, hidden_e, cell_e, u):
         """
         Forward propagation
 
         Similar to GenerationCore but without skip connection between cells
 
         Args:
-            -
+        -
         """
 
         # up-sample or down-sample data if needed
@@ -86,6 +84,8 @@ class InferenceCore(nn.Module):
         if r.size(2) == 1:  # (B, 256, 1, 1) -> (B, 256, 16, 16)
             r = self.upsample_r(r)  # if 'Pyramid' or 'Pool' architecture, up-sample the images
 
-        hidden_e, cell_e = self.core(torch.cat((hidden_g, x_q, v_q, r), dim=1), (hidden_in, cell_in))
+        u = self.downsample_u(u)
 
-        return hidden_e, cell_e
+        hidden, cell = self.core(torch.cat((hidden_g, x_q, v_q, r, u), dim=1), (hidden_e, cell_e))
+
+        return hidden, cell
