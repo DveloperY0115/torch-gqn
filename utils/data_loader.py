@@ -69,6 +69,12 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
     - dataset: String. Indicates one of GQN datasets
     - num_observations: Int. Number of views to be sampled
     - seed: Int. Seed for random sampling
+
+    Returns:
+    - x: A Tensor of shape (B, S', W, H, C). Batch of sequences of images
+    - v: A Tensor of shape (B, S', 7). Batch of sequences of viewpoint information associated with each of x
+    - x_q: A Tensor of shape (B, W, H, C). Batch of target images
+    - v_q: A Tensor of shape (B, 7). Batch of query viewpoints
     """
 
     random.seed(seed)
@@ -79,10 +85,12 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
     if not num_observations:
         num_observations = random.randint(1, num_frames)
 
-    context_idx = random.sample(range(frame_batch.size(1)), num_observations)
-    query_idx = random.randint(0, frame_batch.size(1)-1)
+    len_sequence = frame_batch.size(1)
 
-    x, v = frame_batch[:, context_idx], camera_batch[:, context_idx]
-    x_q, v_q = frame_batch[:, query_idx], camera_batch[:, query_idx]
+    context_idx = random.sample(range(len_sequence), num_observations)
+    query_idx = random.randint(0, len_sequence-1)
+
+    x, v = frame_batch[:, context_idx, :, :, :], camera_batch[:, context_idx, :, :, :]
+    x_q, v_q = frame_batch[:, query_idx, :, :, :], camera_batch[:, query_idx, :, :, :]
 
     return x, v, x_q, v_q
