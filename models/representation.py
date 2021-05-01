@@ -172,5 +172,5 @@ class PoolCls(TowerCls):
         # aggregate representation from different observations into one
         x = torch.sum(x, dim=0, keepdim=True)
 
-        # x.shape = (1, 256, 16, 16)
+        # x.shape = (1, 256, 1, 1)
         return x
