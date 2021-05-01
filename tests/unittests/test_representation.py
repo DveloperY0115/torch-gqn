@@ -17,6 +17,7 @@ sys.path.append(BASE_DIR)    # append project root to import paths
 
 from models.representation import PyramidCls, TowerCls, PoolCls
 
+
 class PyramidClsTest(unittest.TestCase):
 
     def test_runs(self):
@@ -25,6 +26,7 @@ class PyramidClsTest(unittest.TestCase):
         model = PyramidCls().to(device)
 
         summary(model, [(64, 64, 3), (7, 1, 1)])
+
 
 class TowerClsTest(unittest.TestCase):
 
@@ -35,6 +37,7 @@ class TowerClsTest(unittest.TestCase):
 
         summary(model, [(64, 64, 3), (7, 1, 1)])
 
+
 class PoolClsTest(unittest.TestCase):
 
     def test_runs(self):
@@ -44,7 +47,6 @@ class PoolClsTest(unittest.TestCase):
 
         summary(model, [(64, 64, 3), (7, 1, 1)])
 
+
 if __name__ == '__main__':
-    # run test
-    # note that the tests run in ramdom order
     unittest.main()
