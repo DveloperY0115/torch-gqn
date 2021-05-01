@@ -8,7 +8,7 @@ import torch.nn as nn
 
 class ConvLSTMCls(nn.Module):
 
-    def __init__(self, in_channels, out_channels, skip_out_channels):
+    def __init__(self, in_channels, out_channels):
         """
         Convolutional LSTM block for generation network
 
@@ -27,9 +27,6 @@ class ConvLSTMCls(nn.Module):
         self.input_conv_1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
         self.input_conv_2 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
         self.output_conv = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
-
-        # Conv layer for skip-connection
-        self.skip_conv = nn.ConvTranspose2d(out_channels, skip_out_channels, kernel_size=4, stride=4)
 
     def forward(self, input, hidden_in, cell_in):
         """
