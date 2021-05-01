@@ -17,13 +17,13 @@ class GenerationCore(nn.Module):
 
         super(GenerationCore, self).__init__()
 
-        self.upsample_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
+        self.upsample_v_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
         self.upsample_r = nn.ConvTranspose2d(256, 256, kernel_size=16, stride=16, padding=0, bias=False)
-
-        # TODO: Determine the number of channels of 'z'
-        self.conv_lstm = ConvLSTMCls(7+256+128+128, 128, 128)
-
-    def forward(self, q, r, z, hidden_in, cell_in, skip_in):
+        self.core = ConvLSTMCls(7+256+3, 128, kernel_size=5, stride=1, padding=2)
+        # used to generate skip connection in generation architecture
+        self.upsample_h = nn.ConvTranspose2d(128, 128, kernel_size=4, stride=4, padding=0, bias=False)
+        
+    def forward(self, v_q, r, z, hidden_in, cell_in, skip_in):
         """
         Forward propagation
 
@@ -44,14 +44,15 @@ class GenerationCore(nn.Module):
         """
 
         # up-sample or down-sample data if needed
-        q = self.upsample_q(q)    # (B, 7, 1, 1) -> (B, 7, 16, 16)
+        v_q = self.upsample_v_q(v_q)    # (B, 7, 1, 1) -> (B, 7, 16, 16)
         
-        if r.size(2) == 1:
-            r = self.upsample_r(r)    # if 'Pool' architecture was used in representation core, upsample
-        
-        hidden, cell, skip = self.conv_lstm(q, r, z, hidden_in, cell_in, skip_in)
+        if r.size(2) == 1:    # (B, 256, 1, 1) -> (B, 256, 16, 16)
+            r = self.upsample_r(r)    # if 'Pyramid' or 'Pool' architecture, up-sample the images
 
-        return hidden, cell, skip 
+        cell_g, hidden_g = self.core(torch.cat((v_q, r, z),  dim=1), (hidden_in, cell_in))
+        skip_g = self.upsample_h(hidden_g) + skip_in
+
+        return hidden_g, cell_g, skip_g
 
 
 class InferenceCore(nn.Module):
