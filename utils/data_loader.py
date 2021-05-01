@@ -93,8 +93,8 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
     x_q, v_q = frame_batch[:, query_idx, :, :, :], camera_batch[:, query_idx, :]
 
     # unsqueeze viewpoint tensors to make it of shape (B, 7, 1, 1)
-    v = v.unsqueeze(2)
     v = v.unsqueeze(3)
+    v = v.unsqueeze(4)
     v_q = v_q.unsqueeze(2)
     v_q = v_q.unsqueeze(3)
 
