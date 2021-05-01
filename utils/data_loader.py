@@ -7,7 +7,7 @@ import random
 
 class RoomsRingCameraDataset(Dataset):
     """
-    Pytorch dataset object for 'rooms_ring_camera' dataset
+    Pytorch dataset object GQN dataset
     """
 
     def __init__(self, root, transform=None):
@@ -60,6 +60,17 @@ class RoomsRingCameraDataset(Dataset):
 
 
 def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observations=5, seed=None):
+    """
+    Sample random number of views from each scenes in a batch
+
+    Args:
+    - frame_batch: A Tensor of shape (B, S, W, H, C)
+    - camera_batch: A Tensor of shape (B, S, 7)
+    - dataset: String. Indicates one of GQN datasets
+    - num_observations: Int. Number of views to be sampled
+    - seed: Int. Seed for random sampling
+    """
+
     random.seed(seed)
 
     if dataset == 'Room':
