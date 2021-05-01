@@ -20,6 +20,8 @@ class ConvLSTMCls(nn.Module):
 
         super(ConvLSTMCls, self).__init__()
 
+        in_channels = in_channels + out_channels   # concatenate (hidden/cell) from previous cell with current input
+
         # Conv layers for each gate of LSTM cell (size preserving)
         self.forget_conv = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
         self.input_conv_1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, stride=1, padding=2)
