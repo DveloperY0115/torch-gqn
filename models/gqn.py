@@ -61,7 +61,18 @@ class GQNCls(nn.Module):
         - v_q: A Tensor of shape (B, 7, 1, 1). Batch of query viewpoints
 
         Returns:
+    def generate(self, x, v, v_q):
+        """
+        Generate target image given the sequence of images from the same scene,
+        camera extrinsic, and the query viewpoint
 
+        Args:
+        - x: A Tensor of shape (B, S, W, H, C). Images from the single scene
+        - v: A Tensor of shape (B, 7, 1, 1). Camera extrinsic corresponds to x
+        - v_q: A Tensor of shape (B, 7, 1, 1). Query viewpoint
+
+        Returns:
+        - A target image would been seen at the query viewpoint v_q
         """
 
         batch_size, len_sequence, _, _, _ = x.size()
@@ -79,11 +90,24 @@ class GQNCls(nn.Module):
         # initialize generation core states
         cell_g = torch.zeros((batch_size, 128, 16, 16))
         hidden_g = torch.zeros((batch_size, 128, 16, 16))
-        skip = torch.zeros((batch_size, 128, 64, 64))
+        u = torch.zeros((batch_size, 128, 64, 64))
 
-        # initialize inference core states
-        cell_i = torch.zeros((batch_size, 128, 16, 16))
-        hidden_i = torch.zeros((batch_size, 128, 16, 16))
+        for level in range(self.levels):
+            # prior factor
+            mean_pi, std_pi = torch.split(self.eta_pi(hidden_g), 3, dim=1)  # (B, 3, 16, 16) each
+            pi = Normal(mean_pi, std_pi)
+
+            # sample prior latent variable
+            z = pi.rsample()
+
+            # update generation core state
+            hidden_g, cell_g, u = self.gen_net(v_q, r, z, hidden_g, cell_g, u)
+
+        # sample observation from the final skip signal
+        mean = self.eta_g(u)
+
+        # Return shape -> (B, 3, 64, 64)
+        return torch.clamp(mean, 0, 1)
 
 
 
