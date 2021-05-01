@@ -5,7 +5,8 @@ Generation & Inference cores for GQN
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from conv_lstm import ConvLSTMCls
+from .conv_lstm import ConvLSTMCls
+
 
 class GenerationCore(nn.Module):
 
@@ -42,7 +43,7 @@ class GenerationCore(nn.Module):
         - skip: A Tensor of shape (B, C, W, H). Usually of shape (B, 128, 64, 64)
         """
 
-        # upsample or downsample data if needed
+        # up-sample or down-sample data if needed
         q = self.upsample_q(q)    # (B, 7, 1, 1) -> (B, 7, 16, 16)
         
         if r.size(2) == 1:
@@ -51,6 +52,7 @@ class GenerationCore(nn.Module):
         hidden, cell, skip = self.conv_lstm(q, r, z, hidden_in, cell_in, skip_in)
 
         return hidden, cell, skip 
+
 
 class InferenceCore(nn.Module):
 
