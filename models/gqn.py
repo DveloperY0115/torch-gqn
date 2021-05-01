@@ -109,5 +109,57 @@ class GQNCls(nn.Module):
         # Return shape -> (B, 3, 64, 64)
         return torch.clamp(mean, 0, 1)
 
+    def inference(self, x, v, x_q, v_q):
+        """
+        Make inference on scene geometry given the sequence of images from the scene,
+        camera extrinsic, query viewpoints, and images seen at the query viewpoints
 
+        Args:
+        - x: A Tensor of shape (B, S, W, H, C). Batch of image sequences
+        - v: A Tensor of shape (B, S, 7, 1, 1). Batch of viewpoint sequences
+        - x_q: A Tensor of shape (B, W, H, C). Batch of query images
+        - v_q: A Tensor of shape (B, 7, 1, 1). Batch of query viewpoints
 
+        Returns:
+        """
+
+        batch_size, len_sequence, _, _, _ = x.size()
+
+        # Encode scenes
+        if self.repr_architecture == 'Tower':
+            r = torch.zeros((batch_size, 256, 16, 16))
+        else:
+            r = torch.zeros((batch_size, 256, 1, 1))
+        for b in range(batch_size):
+            r[b] = self.repr_net(x[b, :], v[b, :])
+
+        # r.shape => (B, 256, 16, 16)
+
+        # initialize generation core states
+        cell_g = torch.zeros((batch_size, 128, 16, 16))
+        hidden_g = torch.zeros((batch_size, 128, 16, 16))
+        u = torch.zeros((batch_size, 128, 64, 64))
+
+        # initialize inference core states
+        cell_e = torch.zeros((batch_size, 128, 16, 16))
+        hidden_e = torch.zeros((batch_size, 128, 16, 16))
+
+        for level in range(self.levels):
+            # inference state update
+            if self.shared_core:
+                hidden_e, cell_e = self.inf_net(v_q, x_q, r, hidden_g, hidden_e, cell_e, u)
+            else:
+                hidden_e, cell_e = self.inf_net[level](v_q, x_q, r, hidden_g, hidden_e, cell_e, u)
+
+            # posterior factor
+            mean_q, std_q = torch.split(self.eta_q(hidden_e), 3, dim=1)
+            q = Normal(mean_q, std_q)
+
+            # sample posterior latent variable
+            z = q.rsample()
+
+            # update generator state
+            if self.shared_core:
+                hidden_g, cell_g, u = self.gen_net(v_q, r, z, hidden_g, cell_g, u)
+            else:
+                hidden_g, cell_g, u = self.gen_net[level](v_q, r, z, hidden_g, cell_g, u)
