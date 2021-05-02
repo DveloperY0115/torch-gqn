@@ -25,14 +25,15 @@ class ConvLSTMClsTest(unittest.TestCase):
         print('----------< Testing ConvLSTMCls >---------')
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        model = ConvLSTMCls(7+256+128+128, 128).to(device)
+        model = ConvLSTMCls(7+256+3, 128).to(device)
 
         # (dummy) input shapes for testing -> may behave differently in action
-        input_shape = (7+256+128+128, 16, 16)
+        input_shape = (7+256+3, 16, 16)
         hidden_in_shape = (128, 16, 16)
         cell_in_shape = (128, 16, 16)
 
         summary(model, [input_shape, hidden_in_shape, cell_in_shape])
+
 
 if __name__ == '__main__':
    unittest.main()
