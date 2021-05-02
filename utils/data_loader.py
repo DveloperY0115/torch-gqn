@@ -98,4 +98,8 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
     v_q = v_q.unsqueeze(2)
     v_q = v_q.unsqueeze(3)
 
+    # (B, M, W, H, C) -> (B, M, C, H, W)
+    x = x.transpose(2, 4)
+    x_q = x_q.transpose(1, 3)
+
     return x, v, x_q, v_q

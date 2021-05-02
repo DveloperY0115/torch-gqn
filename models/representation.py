@@ -45,8 +45,6 @@ class PyramidCls(nn.Module):
         if not torch.is_tensor(y):
             y = torch.Tensor(y)
 
-        x = x.transpose(1, 3)
-
         # Concatenate view point information
         y = y.repeat(1, 1, 64, 64)
 
@@ -109,8 +107,6 @@ class TowerCls(nn.Module):
 
         if not torch.is_tensor(y):
             y = torch.Tensor(y)
-
-        x = x.transpose(1, 3)
 
         x = F.relu(self.bn_1(self.conv_1(x)))
 
