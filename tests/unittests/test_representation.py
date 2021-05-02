@@ -25,7 +25,7 @@ class PyramidClsTest(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = PyramidCls().to(device)
 
-        summary(model, [(64, 64, 3), (7, 1, 1)])
+        summary(model, [(3, 64, 64), (7, 1, 1)])
 
 
 class TowerClsTest(unittest.TestCase):
@@ -35,7 +35,7 @@ class TowerClsTest(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = TowerCls().to(device)
 
-        summary(model, [(64, 64, 3), (7, 1, 1)])
+        summary(model, [(3, 64, 64), (7, 1, 1)])
 
 
 class PoolClsTest(unittest.TestCase):
@@ -45,7 +45,7 @@ class PoolClsTest(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = PoolCls().to(device)
 
-        summary(model, [(64, 64, 3), (7, 1, 1)])
+        summary(model, [(3, 64, 64), (7, 1, 1)])
 
 
 if __name__ == '__main__':
