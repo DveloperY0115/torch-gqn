@@ -47,7 +47,7 @@ class GenerationCore(nn.Module):
         if r.size(2) == 1:    # (B, 256, 1, 1) -> (B, 256, 16, 16)
             r = self.upsample_r(r)    # if 'Pyramid' or 'Pool' architecture, up-sample the images
 
-        hidden_g, cell_g = self.core(torch.cat((v_q, r, z),  dim=1), (hidden_g, cell_g))
+        hidden_g, cell_g = self.core(torch.cat((v_q, r, z),  dim=1), hidden_g, cell_g)
         u = self.upsample_h(hidden_g) + u
 
         return hidden_g, cell_g, u
@@ -86,6 +86,6 @@ class InferenceCore(nn.Module):
 
         u = self.downsample_u(u)
 
-        hidden, cell = self.core(torch.cat((hidden_g, x_q, v_q, r, u), dim=1), (hidden_e, cell_e))
+        hidden, cell = self.core(torch.cat((hidden_g, x_q, v_q, r, u), dim=1), hidden_e, cell_e)
 
         return hidden, cell
