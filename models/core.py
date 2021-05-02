@@ -17,7 +17,7 @@ class GenerationCore(nn.Module):
 
         self.upsample_v_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
         self.upsample_r = nn.ConvTranspose2d(256, 256, kernel_size=16, stride=16, padding=0, bias=False)
-        self.core = ConvLSTMCls(7+256+128+128, 128, kernel_size=5, stride=1, padding=2)
+        self.core = ConvLSTMCls(7+256+3, 128)
         # used to generate skip connection in generation architecture
         self.upsample_h = nn.ConvTranspose2d(128, 128, kernel_size=4, stride=4, padding=0, bias=False)
 
@@ -64,8 +64,8 @@ class InferenceCore(nn.Module):
         self.downsample_x_q = nn.Conv2d(3, 3, kernel_size=4, stride=4, padding=0, bias=False)
         self.upsample_v_q = nn.ConvTranspose2d(7, 7, kernel_size=16, stride=16, padding=0, bias=False)
         self.upsample_r = nn.ConvTranspose2d(256, 256, kernel_size=16, stride=16, padding=0, bias=False)
-        self.downsample_ = nn.Conv2d(128, 128, kernel_size=4, stride=4, padding=0, bias=False)
-        self.core = ConvLSTMCls(7+3+256+128+128, 128, kernel_size=5, stride=1, padding=2)
+        self.downsample_u = nn.Conv2d(128, 128, kernel_size=4, stride=4, padding=0, bias=False)
+        self.core = ConvLSTMCls(7+3+256+128+128, 128)
 
     def forward(self, v_q, x_q, r, hidden_g, hidden_e, cell_e, u):
         """
