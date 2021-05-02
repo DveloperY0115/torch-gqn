@@ -6,7 +6,6 @@ import os
 import sys
 import collections
 import pickle
-import torch
 import tensorflow as tf
 tf.enable_eager_execution()
 
@@ -138,11 +137,6 @@ def get_dataset_files(dataset_info, mode, root):
     basepath = dataset_info.basepath
     base = os.path.join(root, basepath, mode)
 
-    if mode == 'train':
-        num_files = dataset_info.train_size
-    elif mode == 'test':
-        num_files = dataset_info.test_size
-
     # usually of form '{}-of-{}.tfrecord'
     files = sorted(os.listdir(base))
 
@@ -191,7 +185,7 @@ def _process_cameras(dataset_info, example, is_raw):
     """
     raw_cameras = example['cameras']
     raw_cameras = tf.reshape(raw_cameras, (-1, dataset_info.sequence_size, _NUM_POSE_PARAMS))
-        
+
     if not is_raw:
         position = raw_cameras[:, :, 0:3]
         yaw = raw_cameras[:, :, 3:4]

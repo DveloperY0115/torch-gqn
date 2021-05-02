@@ -2,7 +2,6 @@ import os
 import torch
 import pickle
 import random
-import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -39,7 +38,7 @@ class RoomsRingCameraDataset(Dataset):
         """
 
         scene_file = os.path.join(self.root, f"{idx}.p")
-        
+
         with open(scene_file, 'rb') as file:
             context = pickle.load(file)
 

@@ -160,7 +160,7 @@ class PoolCls(TowerCls):
 
         Returns: A Tensor of shape (1, 256, 1, 1)
         """
-        
+
         x = super().forward(x, y)
         x = self.pooling(x)
 

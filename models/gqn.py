@@ -4,7 +4,6 @@ GQN
 
 import torch
 import torch.nn as nn
-from torch.nn import functional as F
 from torch.distributions import Normal
 from torch.distributions.kl import kl_divergence
 from .representation import PyramidCls, TowerCls, PoolCls
@@ -71,7 +70,7 @@ class GQNCls(nn.Module):
         Returns: ELBO (Evidence Lower BOund) calculated from the input data
         """
 
-        B, M, *_ = x.size()
+        B, *_ = x.size()
 
         # Encode scenes
         if self.repr_architecture == 'Tower':
@@ -148,7 +147,7 @@ class GQNCls(nn.Module):
         - A target image would been seen at the query viewpoint v_q
         """
 
-        B, M, *_ = x.size()
+        B, *_ = x.size()
 
         # Encode scenes
         if self.repr_architecture == 'Tower':
@@ -166,16 +165,21 @@ class GQNCls(nn.Module):
         for l in range(self.L):
             # prior factor
             mean_pi, std_pi = torch.split(self.eta_pi(hidden_g), 3, dim=1)  # (B, 3, 16, 16) each
+            std_pi = 0.5 * torch.exp(std_pi)
             pi = Normal(mean_pi, std_pi)
 
             # sample prior latent variable
             z = pi.rsample()
 
             # update generation core state
-            hidden_g, cell_g, u = self.gen_net(v_q, r, z, hidden_g, cell_g, u)
+            if self.shared_core:
+                hidden_g, cell_g, u = self.gen_net(v_q, r, z, hidden_g, cell_g, u)
+            else:
+                hidden_g, cell_g, u = self.gen_net[l](v_q, r, z, hidden_g, cell_g, u)
 
         # sample observation from the final skip signal
         mean = self.eta_g(u)
 
+        # TODO: sample image using annealed variance 'sigma_t'
         # Return shape -> (B, 3, 64, 64). Batch of predicted images at query viewpoints
         return torch.clamp(mean, 0, 1)

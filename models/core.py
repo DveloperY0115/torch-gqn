@@ -43,7 +43,7 @@ class GenerationCore(nn.Module):
 
         # up-sample or down-sample data if needed
         v_q = self.upsample_v_q(v_q)    # (B, 7, 1, 1) -> (B, 7, 16, 16)
-        
+
         if r.size(2) == 1:    # (B, 256, 1, 1) -> (B, 256, 16, 16)
             r = self.upsample_r(r)    # if 'Pyramid' or 'Pool' architecture, up-sample the images
 

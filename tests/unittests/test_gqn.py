@@ -31,19 +31,6 @@ class GQNClsTest(unittest.TestCase):
         # prepare model
         model = GQNCls().to(device)
 
-        dataset = RoomsRingCameraDataset('../../data/rooms_ring_camera_torch/train')
-        loader = DataLoader(dataset, batch_size=32, shuffle=True)
-
-        # generate batch for testing
-        f_batch, c_batch = next(iter(loader))
-
-        # sample random number of views from each sequence
-        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch)
-
-        B = x.shape[0]
-
-        sigma_t = torch.zeros((B, 3, 64, 64))
-
         summary(model, [(5, 3, 64, 64), (5, 7, 1, 1), (3, 64, 64), (7, 1, 1), (3, 64, 64)])
 
 
