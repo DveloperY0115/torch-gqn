@@ -58,11 +58,9 @@ class GQNCls(nn.Module):
         self.eta_q = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
         self.eta_g = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
 
-    def forward(self, x, v, x_q, v_q):
+    def forward(self, x, v, x_q, v_q, sigma_t):
         """
-        Forward propagation. Calculate ELBO (evidence lower bound).
-        GQN make inference on the given images and viewpoint information
-        in this step.
+        Calculate ELBO, given the training data
 
         Args:
         - x: A Tensor of shape (B, S, W, H, C). Batch of image sequences
@@ -70,10 +68,71 @@ class GQNCls(nn.Module):
         - x_q: A Tensor of shape (B, W, H, C). Batch of query images
         - v_q: A Tensor of shape (B, 7, 1, 1). Batch of query viewpoints
 
-        Returns:
-        - ELBO
+        Returns: ELBO (Evidence Lower BOund) calculated from the input data
         """
-        pass
+
+        B, M, *_ = x.size()
+
+        # Encode scenes
+        if self.repr_architecture == 'Tower':
+            r = torch.zeros((B, 256, 16, 16))
+        else:
+            r = torch.zeros((B, 256, 1, 1))
+        for b in range(B):
+            r[b] = self.repr_net(x[b, :], v[b, :])
+
+        # initialize generation core states
+        cell_g = torch.zeros((B, 128, 16, 16))
+        hidden_g = torch.zeros((B, 128, 16, 16))
+        u = torch.zeros((B, 128, 64, 64))
+
+        # initialize inference core states
+        cell_e = torch.zeros((B, 128, 16, 16))
+        hidden_e = torch.zeros((B, 128, 16, 16))
+
+        # initialize ELBO
+        elbo = 0
+
+        # recurrent loop
+        for l in range(self.L):
+            # prior factor
+            mu_pi, std_pi = torch.split(self.eta_pi(hidden_g), 3, dim=1)
+            std_pi = 0.5 * torch.exp(std_pi)    # standard deviation >= 0
+            pi = Normal(mu_pi, std_pi)    # prior distribution
+
+            # inference state update
+            if self.shared_core:
+                hidden_e, cell_e = self.inf_net(v_q, x_q, r, hidden_g, hidden_e, cell_e, u)
+            else:
+                hidden_e, cell_e = self.inf_net[l](v_q, x_q, r, hidden_g, hidden_e, cell_e, u)
+
+            # posterior factor
+            mu_q, std_q = torch.split(self.eta_q(hidden_e), 3, dim=1)
+            std_q = 0.5 * torch.exp(std_q)    # standard deviation >= 0
+            q = Normal(mu_q, std_q)
+
+            # sample posterior latent variable
+            z = q.rsample()
+
+            # update generator state
+            if self.shared_core:
+                hidden_g, cell_g, u = self.gen_net(v_q, r, z, hidden_g, cell_g, u)
+            else:
+                hidden_g, cell_g, u = self.gen_net[l](v_q, r, z, hidden_g, cell_g, u)
+
+            # update KL contribution (regularization term) to the ELBO
+            kl_div = kl_divergence(q, pi)
+
+            # ELBO <- ELBO - KL(...)
+            elbo -= torch.sum(kl_div, dim=[1, 2, 3])
+
+        # calculate log likelihood contribution
+        mu = self.eta_g(u)
+        sigma_t = 0.5 * torch.exp(sigma_t)    # standard deviation >= 0
+        likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
+        elbo += likelihood
+
+        return elbo
 
     def generate(self, x, v, v_q):
         """
@@ -89,7 +148,7 @@ class GQNCls(nn.Module):
         - A target image would been seen at the query viewpoint v_q
         """
 
-        B, M, _, _, _ = x.size()
+        B, M, *_ = x.size()
 
         # Encode scenes
         if self.repr_architecture == 'Tower':
@@ -98,8 +157,6 @@ class GQNCls(nn.Module):
             r = torch.zeros((B, 256, 1, 1))
         for b in range(B):
             r[b] = self.repr_net(x[b, :], v[b, :])
-
-        # r.shape => (B, 256, 16, 16)
 
         # initialize generation core states
         cell_g = torch.zeros((B, 128, 16, 16))
@@ -122,58 +179,3 @@ class GQNCls(nn.Module):
 
         # Return shape -> (B, 3, 64, 64). Batch of predicted images at query viewpoints
         return torch.clamp(mean, 0, 1)
-
-    def inference(self, x, v, x_q, v_q):
-        """
-        Make inference on scene geometry given the sequence of images from the scene,
-        camera extrinsic, query viewpoints, and images seen at the query viewpoints
-
-        Args:
-        - x: A Tensor of shape (B, S, W, H, C). Batch of image sequences
-        - v: A Tensor of shape (B, S, 7, 1, 1). Batch of viewpoint sequences
-        - x_q: A Tensor of shape (B, W, H, C). Batch of query images
-        - v_q: A Tensor of shape (B, 7, 1, 1). Batch of query viewpoints
-
-        Returns:
-        """
-
-        B, M, _, _, _ = x.size()
-
-        # Encode scenes
-        if self.repr_architecture == 'Tower':
-            r = torch.zeros((B, 256, 16, 16))
-        else:
-            r = torch.zeros((B, 256, 1, 1))
-        for b in range(B):
-            r[b] = self.repr_net(x[b, :], v[b, :])
-
-        # r.shape => (B, 256, 16, 16)
-
-        # initialize generation core states
-        cell_g = torch.zeros((B, 128, 16, 16))
-        hidden_g = torch.zeros((B, 128, 16, 16))
-        u = torch.zeros((B, 128, 64, 64))
-
-        # initialize inference core states
-        cell_e = torch.zeros((B, 128, 16, 16))
-        hidden_e = torch.zeros((B, 128, 16, 16))
-
-        for l in range(self.L):
-            # inference state update
-            if self.shared_core:
-                hidden_e, cell_e = self.inf_net(v_q, x_q, r, hidden_g, hidden_e, cell_e, u)
-            else:
-                hidden_e, cell_e = self.inf_net[l](v_q, x_q, r, hidden_g, hidden_e, cell_e, u)
-
-            # posterior factor
-            mean_q, std_q = torch.split(self.eta_q(hidden_e), 3, dim=1)
-            q = Normal(mean_q, std_q)
-
-            # sample posterior latent variable
-            z = q.rsample()
-
-            # update generator state
-            if self.shared_core:
-                hidden_g, cell_g, u = self.gen_net(v_q, r, z, hidden_g, cell_g, u)
-            else:
-                hidden_g, cell_g, u = self.gen_net[l](v_q, r, z, hidden_g, cell_g, u)
