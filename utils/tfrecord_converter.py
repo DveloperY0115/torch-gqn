@@ -7,7 +7,7 @@ import sys
 import collections
 import pickle
 import tensorflow as tf
-tf.enable_eager_execution()
+tf.compat.v1.enable_eager_execution()
 
 # suppress deprecation warning
 from tensorflow.python.util import deprecation

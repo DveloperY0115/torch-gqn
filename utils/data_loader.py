@@ -1,13 +1,13 @@
 import os
 import torch
 import pickle
-import random
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
-
+import random
 
 class RoomsRingCameraDataset(Dataset):
     """
-    Pytorch dataset object for 'rooms_ring_camera' dataset
+    Pytorch dataset object GQN dataset
     """
 
     def __init__(self, root, transform=None):
@@ -22,12 +22,14 @@ class RoomsRingCameraDataset(Dataset):
         self.root = root
         self.transform = transform
 
+
     def __len__(self):
         """
         Get the number of data in the dataset
         """
 
         return len(os.listdir(self.root))
+
 
     def __getitem__(self, idx):
         """
@@ -38,7 +40,7 @@ class RoomsRingCameraDataset(Dataset):
         """
 
         scene_file = os.path.join(self.root, f"{idx}.p")
-
+        
         with open(scene_file, 'rb') as file:
             context = pickle.load(file)
 
@@ -79,26 +81,16 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
 
     if dataset == 'Room':
         num_frames = 5
-
+    
     if not num_observations:
         num_observations = random.randint(1, num_frames)
 
     len_sequence = frame_batch.size(1)
 
     context_idx = random.sample(range(len_sequence), num_observations)
-    query_idx = random.randint(0, len_sequence - 1)
+    query_idx = random.randint(0, len_sequence-1)
 
-    x, v = frame_batch[:, context_idx, :, :, :], camera_batch[:, context_idx, :]
-    x_q, v_q = frame_batch[:, query_idx, :, :, :], camera_batch[:, query_idx, :]
-
-    # unsqueeze viewpoint tensors to make it of shape (B, 7, 1, 1)
-    v = v.unsqueeze(3)
-    v = v.unsqueeze(4)
-    v_q = v_q.unsqueeze(2)
-    v_q = v_q.unsqueeze(3)
-
-    # (B, M, W, H, C) -> (B, M, C, H, W)
-    x = x.transpose(2, 4)
-    x_q = x_q.transpose(1, 3)
+    x, v = frame_batch[:, context_idx, :, :, :], camera_batch[:, context_idx, :, :, :]
+    x_q, v_q = frame_batch[:, query_idx, :, :, :], camera_batch[:, query_idx, :, :, :]
 
     return x, v, x_q, v_q

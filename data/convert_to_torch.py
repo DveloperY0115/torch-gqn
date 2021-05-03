@@ -3,6 +3,7 @@ Converts selected data to Pytorch compatible formats (e.g. Numpy arrays, etc...)
 """
 
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 from pathlib import Path
 from multiprocessing import Process
@@ -14,6 +15,9 @@ sys.path.append(BASE_DIR)    # append project root to import paths
 
 from utils.tfrecord_converter import _DATASETS
 from utils.tfrecord_converter import *
+
+# suppress warnings
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def main():
     if len(sys.argv) < 2:
@@ -43,15 +47,20 @@ def main():
     tot = 0
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
+
         for i, raw_data in enumerate(engine):
             converted_file = os.path.join(converted_dataset_train, f'{tot+i}.p')
             print(f' [-] converting scene {file}-{i} into {converted_file}')
             p = Process(target=convert_raw_to_numpy, args=(dataset_info, raw_data, converted_file))
             p.start()
             p.join()
+
         tot += i
 
-    print(f' [-] Converted total {tot} contexts in the training set')
+        # restrict the number of train data samples -> 1 M
+        if (tot == 1000000):
+            print(f' [-] Converted total {tot} contexts in the training set')
+            break
 
     # convert test data
     files = get_dataset_files(dataset_info, 'test', '.')
@@ -65,9 +74,13 @@ def main():
             p = Process(target=convert_raw_to_numpy, args=(dataset_info, raw_data, converted_file))
             p.start()
             p.join()
+
         tot += i
 
-    print(f' [-] Converted total {tot} contexts in the test set')
-
+        # restrict the number of data samples -> 200 Thousand
+        if (tot == 200000):
+            print(f' [-] Converted total {tot} contexts in the test set')
+            break
+        
 if __name__ == '__main__':
     main()
