@@ -34,12 +34,12 @@ class ConvLSTMCls(nn.Module):
 
         Args:
         - input: A tuple of Tensors.
-        - hidden_in: A Tensor of shape (B, C, W, H). Hidden variable from previous ConvLSTM cell. Usually of shape (B, 256, 16, 16)
-        - cell_in: A Tensor of shape (B, C, W, H). Cell state from previous ConvLSTM cell. Usually of shape (B, 256, 16, 16)
+        - hidden_in: A Tensor of shape (B, C, H, W). Hidden variable from previous ConvLSTM cell.
+        - cell_in: A Tensor of shape (B, C, H, W). Cell state from previous ConvLSTM cell.
 
         Returns: A tuple of Tensors.
-        - hidden: A Tensor of shape (B, C, W, H). Usually of shape (B, 256, 16, 16)
-        - cell: A Tensor of shape (B, C, W, H). Usually of shape (B, 256, 16, 16)
+        - hidden: A Tensor of shape (B, C, H, W).
+        - cell: A Tensor of shape (B, C, H, W).
         """
 
         # concatenate hidden state and inputs to the cell
