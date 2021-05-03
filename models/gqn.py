@@ -127,11 +127,10 @@ class GQNCls(nn.Module):
 
         # calculate log likelihood contribution
         mu = self.eta_g(u)
-        sigma_t = 0.5 * torch.exp(sigma_t)    # standard deviation >= 0
         likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
         elbo += likelihood
 
-        return elbo
+        return -(elbo.mean())
 
     def generate(self, x, v, v_q):
         """
