@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class PyramidCls(nn.Module):
 
     def __init__(self):
@@ -33,7 +34,7 @@ class PyramidCls(nn.Module):
 
         Args:
         - x: A Tensor of shape (B, W, H, C). Batch of images
-        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+        - y: A Tensor of shape (B, 7, 1, 1). Batch of camera extrinsic
 
         Returns: A Tensor of shape (1, 256, 1, 1)
         """
@@ -44,10 +45,7 @@ class PyramidCls(nn.Module):
         if not torch.is_tensor(y):
             y = torch.Tensor(y)
 
-        x = x.transpose(1, 3)
-
         # Concatenate view point information
-        y = y.transpose(1, 3)
         y = y.repeat(1, 1, 64, 64)
 
         x = torch.cat((x, y), dim=1)
@@ -99,7 +97,7 @@ class TowerCls(nn.Module):
 
         Args:
         - x: A Tensor of shape (B, W, H, C). Batch of images
-        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+        - y: A Tensor of shape (B, 7, 1, 1). Batch of camera extrinsic
 
         Returns: A Tensor of shape (1, 256, 16, 16)
         """
@@ -110,8 +108,6 @@ class TowerCls(nn.Module):
         if not torch.is_tensor(y):
             y = torch.Tensor(y)
 
-        x = x.transpose(1, 3)
-
         x = F.relu(self.bn_1(self.conv_1(x)))
 
         # Residual connection
@@ -121,7 +117,6 @@ class TowerCls(nn.Module):
         x = F.relu(self.bn_3(self.conv_3(x) + skip))
 
         # Concatenate view point information
-        y = y.transpose(1, 3)
         y = y.repeat(1, 1, 16, 16)
 
         x = torch.cat((x, y), dim=1)
@@ -161,11 +156,11 @@ class PoolCls(TowerCls):
 
         Args:
         - x: A Tensor of shape (B, W, H, C). Batch of images
-        - y: A Tensor of shape (B, 1, 1, 7). Batch of camera extrinsics
+        - y: A Tensor of shape (B, 7, 1, 1). Batch of camera extrinsic
 
         Returns: A Tensor of shape (1, 256, 1, 1)
         """
-        
+
         x = super().forward(x, y)
         x = self.pooling(x)
 

@@ -17,6 +17,7 @@ sys.path.append(BASE_DIR)    # append project root to import paths
 
 from models.representation import PyramidCls, TowerCls, PoolCls
 
+
 class PyramidClsTest(unittest.TestCase):
 
     def test_runs(self):
@@ -24,7 +25,8 @@ class PyramidClsTest(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = PyramidCls().to(device)
 
-        summary(model, [(64, 64, 3), (1, 1, 7)])
+        summary(model, [(3, 64, 64), (7, 1, 1)])
+
 
 class TowerClsTest(unittest.TestCase):
 
@@ -33,7 +35,8 @@ class TowerClsTest(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = TowerCls().to(device)
 
-        summary(model, [(64, 64, 3), (1, 1, 7)])
+        summary(model, [(3, 64, 64), (7, 1, 1)])
+
 
 class PoolClsTest(unittest.TestCase):
 
@@ -42,9 +45,8 @@ class PoolClsTest(unittest.TestCase):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = PoolCls().to(device)
 
-        summary(model, [(64, 64, 3), (1, 1, 7)])
+        summary(model, [(3, 64, 64), (7, 1, 1)])
+
 
 if __name__ == '__main__':
-    # run test
-    # note that the tests run in ramdom order
     unittest.main()
