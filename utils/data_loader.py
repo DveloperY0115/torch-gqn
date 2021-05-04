@@ -90,7 +90,17 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
     context_idx = random.sample(range(len_sequence), num_observations)
     query_idx = random.randint(0, len_sequence-1)
 
-    x, v = frame_batch[:, context_idx, :, :, :], camera_batch[:, context_idx, :, :, :]
-    x_q, v_q = frame_batch[:, query_idx, :, :, :], camera_batch[:, query_idx, :, :, :]
+    x, v = frame_batch[:, context_idx, :, :, :], camera_batch[:, context_idx, :]
+    x_q, v_q = frame_batch[:, query_idx, :, :, :], camera_batch[:, query_idx, :]
+
+    # unsqueeze viewpoint tensors to make it of shape (B, 7, 1, 1)
+    v = v.unsqueeze(3)
+    v = v.unsqueeze(4)
+    v_q = v_q.unsqueeze(2)
+    v_q = v_q.unsqueeze(3)
+
+    # (B, M, W, H, C) -> (B, M, C, H, W)
+    x = x.transpose(2, 4)
+    x_q = x_q.transpose(1, 3)
 
     return x, v, x_q, v_q
