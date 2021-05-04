@@ -7,6 +7,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import sys
 from pathlib import Path
 from multiprocessing import Process
+from tqdm import tqdm
 
 # constants
 BASE_DIR = os.path.join(Path(__file__).parent.absolute(), '../')    # path to project root directory
@@ -44,43 +45,64 @@ def main():
     # convert training data
     files = get_dataset_files(dataset_info, 'train', '.')
 
-    tot = 0
+    cnt = 0
+    total = 1000000
+
+    pbar = tqdm(total=total, leave=False)
+    pbar_str = 'Processing Training TFRecord: {}/{}'.format(
+        str(cnt).zfill(len(str(total))), total)
+
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
 
         for i, raw_data in enumerate(engine):
-            converted_file = os.path.join(converted_dataset_train, f'{tot+i}.p')
-            print(f' [-] converting scene {file}-{i} into {converted_file}')
+            converted_file = os.path.join(converted_dataset_train, f'{cnt+i}.p')
+            # print(f' [-] converting scene {file}-{i} into {converted_file}')
             p = Process(target=convert_raw_to_numpy, args=(dataset_info, raw_data, converted_file))
             p.start()
             p.join()
 
-        tot += i
+        cnt += i
+        pbar.update(cnt)
+        pbar.set_description('{}'.format(pbar_str))
 
         # restrict the number of train data samples -> 1 M
-        if (tot == 1000000):
-            print(f' [-] Converted total {tot} contexts in the training set')
+        if cnt == total:
+            print(f' [-] Converted total {cnt} contexts in the training set')
             break
+
+    pbar.close()
 
     # convert test data
     files = get_dataset_files(dataset_info, 'test', '.')
 
-    tot = 0
+    cnt = 0
+    total = 200000
+
+    pbar = tqdm(total=total, leave=False)
+    pbar_str = 'Processing Test TFRecord: {}/{}'.format(
+        str(cnt).zfill(len(str(total))), total)
+
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
         for i, raw_data in enumerate(engine):
-            converted_file = os.path.join(converted_dataset_test, f'{tot+i}.p')
-            print(f' [-] converting scene {file}-{i} into {converted_file}')
+            converted_file = os.path.join(converted_dataset_test, f'{cnt+i}.p')
+            # print(f' [-] converting scene {file}-{i} into {converted_file}')
             p = Process(target=convert_raw_to_numpy, args=(dataset_info, raw_data, converted_file))
             p.start()
             p.join()
 
-        tot += i
+        cnt += i
+        pbar.update(cnt)
+        pbar.set_description('{}'.format(pbar_str))
 
         # restrict the number of data samples -> 200 Thousand
-        if (tot == 200000):
-            print(f' [-] Converted total {tot} contexts in the test set')
+        if cnt == total:
+            print(f' [-] Converted total {cnt} contexts in the test set')
             break
-        
+
+    pbar.close()
+
+
 if __name__ == '__main__':
     main()
