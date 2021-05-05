@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 # data loader parameters
 parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
 parser.add_argument('--n_epochs', type=int, default=2, help='number of epochs')
-parser.add_argument('--n_workers', type=int, default=4, help='number of data loading workers')
+parser.add_argument('--n_workers', type=int, default=1, help='number of data loading workers')
 
 # model parameters
 parser.add_argument('--level', type=int, default=12, help='Number of generation/inference core levels')
@@ -48,9 +48,12 @@ parser.add_argument('--out_dir', type=str, default='outputs',
 args = parser.parse_args()
 
 
-def train_one_epoch(dataset, dataloader, model, optimizer, scheduler, epoch=None, writer=None):
+def train_one_epoch(train_dataset, train_dataloader,
+                    test_dataset, test_dataloader,
+                    model, optimizer, scheduler, epoch=None, writer=None):
     """
     Train the model in one epoch
+    Generate images in every 1000 iteration
 
     Args:
     - dataset: Pytorch Dataset object.
@@ -67,7 +70,7 @@ def train_one_epoch(dataset, dataloader, model, optimizer, scheduler, epoch=None
 
     total_elbo = 0
 
-    n_data = len(dataset)
+    n_data = len(train_dataset)
 
     # Create a progress bar
     pbar = tqdm(total=n_data, leave=False)
@@ -75,7 +78,7 @@ def train_one_epoch(dataset, dataloader, model, optimizer, scheduler, epoch=None
     epoch_str = '' if epoch is None else '[Epoch {}/{}]'.format(
         str(epoch).zfill(len(str(args.n_epochs))), args.n_epochs)
 
-    for i, (f_batch, c_batch) in enumerate(dataloader):
+    for i, (f_batch, c_batch) in enumerate(train_dataloader):
 
         f_batch = f_batch.to(device)
         c_batch = c_batch.to(device)
@@ -105,17 +108,39 @@ def train_one_epoch(dataset, dataloader, model, optimizer, scheduler, epoch=None
         pbar.set_description('{} ELBO: {:f}'.format(epoch_str, elbo))
         pbar.update(batch_size)
 
-        # Save the model. (in every 1000 iterations)
+        # generate images
+        if i == 0:
+            with torch.no_grad():
+                generate_images(test_dataloader, model, sigma_t, writer)
+
+        # save the model
         if (i + 1) % 10000 == 0:
             model_file = os.path.join(
                 args.out_dir, 'model_{:d}-{:d}.pth'.format(i + 1, epoch))
             torch.save(model.state_dict(), model_file)
             print("Saved '{}'.".format(model_file))
 
+        # write summary
+        if writer:
+            writer.add_scalar('ELBO', elbo)
+
     pbar.close()
     n_batch = n_data / args.batch_size
     mean_elbo = total_elbo / n_batch
     return mean_elbo
+
+
+def generate_images(test_dataloader, model, sigma_t, writer=None):
+    f_batch, c_batch = next(iter(test_dataloader))
+
+    # sample query images/viewpoints from batch
+    x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room', num_observations=5)
+    pred = model.generate(x, v, v_q, sigma_t)    # (B, 3, 64, 64)
+
+    # write summary
+    if writer:
+        writer.add_images('GT', x)
+        writer.add_images('Prediction', pred)
 
 
 def main():
@@ -128,6 +153,12 @@ def main():
                               batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=int(args.n_workers))
+
+    test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/test')
+    test_loader = DataLoader(dataset=test_dataset,
+                             batch_size=args.batch_size,
+                             shuffle=True,
+                             num_workers=int(args.n_workers))
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
@@ -155,14 +186,13 @@ def main():
     writer = SummaryWriter(args.out_dir)
 
     for epoch in range(args.n_epochs):
-        train_one_epoch(train_dataset, train_loader, model, optimizer, epoch, writer)
+        train_one_epoch(train_dataset, train_loader, test_dataset, test_loader, model, optimizer, scheduler, epoch, writer)
 
-        if (epoch + 1) % 10 == 0:
-            # Save the model.
-            model_file = os.path.join(
+        # Save the model.
+        model_file = os.path.join(
                 args.out_dir, 'model_{:d}.pth'.format(epoch + 1))
-            torch.save(model.state_dict(), model_file)
-            print("Saved '{}'.".format(model_file))
+        torch.save(model.state_dict(), model_file)
+        print("Saved '{}'.".format(model_file))
 
     writer.close()
 
