@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 # data loader parameters
 parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
 parser.add_argument('--n_epochs', type=int, default=2, help='number of epochs')
-parser.add_argument('--n_workers', type=int, default=1, help='number of data loading workers')
+parser.add_argument('--n_workers', type=int, default=0, help='number of data loading workers')
 
 # model parameters
 parser.add_argument('--level', type=int, default=12, help='Number of generation/inference core levels')
@@ -133,13 +133,16 @@ def train_one_epoch(train_dataset, train_dataloader,
 def generate_images(test_dataloader, model, sigma_t, writer=None):
     f_batch, c_batch = next(iter(test_dataloader))
 
+    f_batch = f_batch.to(device)
+    c_batch = c_batch.to(device)
+
     # sample query images/viewpoints from batch
     x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room', num_observations=5)
     pred = model.generate(x, v, v_q, sigma_t)    # (B, 3, 64, 64)
 
     # write summary
     if writer:
-        writer.add_images('GT', x)
+        writer.add_images('GT', x_q)
         writer.add_images('Prediction', pred)
 
 

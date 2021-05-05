@@ -71,9 +71,9 @@ def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observation
     - seed: Int. Seed for random sampling
 
     Returns:
-    - x: A Tensor of shape (B, S', W, H, C). Batch of sequences of images
+    - x: A Tensor of shape (B, S', C, H, W). Batch of sequences of images
     - v: A Tensor of shape (B, S', 7). Batch of sequences of viewpoint information associated with each of x
-    - x_q: A Tensor of shape (B, W, H, C). Batch of target images
+    - x_q: A Tensor of shape (B, C, H, W). Batch of target images
     - v_q: A Tensor of shape (B, 7). Batch of query viewpoints
     """
 
