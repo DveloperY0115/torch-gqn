@@ -7,6 +7,7 @@ from models.gqn import GQNCls
 import argparse
 import os
 import torch
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
@@ -109,9 +110,13 @@ def train_one_epoch(train_dataset, train_dataloader,
         pbar.update(batch_size)
 
         # generate images
-        if i == 0:
+        if (i + 1) % 1000 == 0:
             with torch.no_grad():
-                generate_images(test_dataloader, model, sigma_t, writer)
+                x_q, pred = generate_images(test_dataloader, model, sigma_t)
+
+                if writer:
+                    writer.add_images('GT', x_q, int(i / 1000))
+                    writer.add_images('Prediction', pred, int(i / 1000))
 
         # save the model
         if (i + 1) % 10000 == 0:
@@ -122,7 +127,7 @@ def train_one_epoch(train_dataset, train_dataloader,
 
         # write summary
         if writer:
-            writer.add_scalar('ELBO', elbo)
+            writer.add_scalar('ELBO', elbo, i)
 
     pbar.close()
     n_batch = n_data / args.batch_size
@@ -130,7 +135,7 @@ def train_one_epoch(train_dataset, train_dataloader,
     return mean_elbo
 
 
-def generate_images(test_dataloader, model, sigma_t, writer=None):
+def generate_images(test_dataloader, model, sigma_t):
     f_batch, c_batch = next(iter(test_dataloader))
 
     f_batch = f_batch.to(device)
@@ -140,10 +145,7 @@ def generate_images(test_dataloader, model, sigma_t, writer=None):
     x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room', num_observations=5)
     pred = model.generate(x, v, v_q, sigma_t)    # (B, 3, 64, 64)
 
-    # write summary
-    if writer:
-        writer.add_images('GT', x_q)
-        writer.add_images('Prediction', pred)
+    return x_q, pred
 
 
 def main():
