@@ -132,7 +132,7 @@ class GQNCls(nn.Module):
 
         return -(elbo.mean())
 
-    def generate(self, x, v, v_q):
+    def generate(self, x, v, v_q, sigma_t):
         """
         Generate target image given the sequence of images from the scene,
         camera extrinsic, and the query viewpoint
@@ -179,6 +179,6 @@ class GQNCls(nn.Module):
         # sample observation from the final skip signal
         mean = self.eta_g(u)
 
-        # TODO: sample image using annealed variance 'sigma_t'
-        # Return shape -> (B, 3, 64, 64). Batch of predicted images at query viewpoints
-        return torch.clamp(mean, 0, 1)
+        # Return shape -> (B, 3, 64, 64)
+        pred = Normal(mean, sigma_t).sample()
+        return pred
