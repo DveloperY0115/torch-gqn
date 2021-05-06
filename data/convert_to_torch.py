@@ -67,8 +67,8 @@ def main():
         pbar.set_description('{}'.format(pbar_str))
 
         # restrict the number of train data samples -> 1 M
-        if cnt == total:
-            print(f' [-] Converted total {cnt} contexts in the training set')
+        if cnt >= total:
+            print(f' [-] Converted total {cnt+1} contexts in the training set')
             break
 
     pbar.close()
@@ -97,8 +97,8 @@ def main():
         pbar.set_description('{}'.format(pbar_str))
 
         # restrict the number of data samples -> 200 Thousand
-        if cnt == total:
-            print(f' [-] Converted total {cnt} contexts in the test set')
+        if cnt >= total:
+            print(f' [-] Converted total {cnt+1} contexts in the test set')
             break
 
     pbar.close()
