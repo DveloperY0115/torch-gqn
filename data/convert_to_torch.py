@@ -3,7 +3,9 @@ Converts selected data to Pytorch compatible formats (e.g. Numpy arrays, etc...)
 """
 
 import os
+# disable warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ["KMP_WARNINGS"] = "FALSE" 
 import sys
 from pathlib import Path
 from multiprocessing import Process
