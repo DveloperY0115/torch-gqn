@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser()
 # data loader parameters
 parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
 parser.add_argument('--n_epochs', type=int, default=2, help='number of epochs')
-parser.add_argument('--n_workers', type=int, default=0, help='number of data loading workers')
+parser.add_argument('--n_workers', type=int, default=4, help='number of data loading workers')
 
 # model parameters
 parser.add_argument('--level', type=int, default=12, help='Number of generation/inference core levels')
