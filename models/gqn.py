@@ -74,20 +74,20 @@ class GQNCls(nn.Module):
 
         # Encode scenes
         if self.repr_architecture == 'Tower':
-            r = torch.tensor((), dtype=torch.float64).new_zeros((B, 256, 16, 16))
+            r = x.new_zeros((B, 256, 16, 16))
         else:
-            r = torch.tensor((), dtype=torch.float64).new_zeros((B, 256, 1, 1))
+            r = x.new_zeros((B, 256, 1, 1))
         for b in range(B):
             r[b] = self.repr_net(x[b, :], v[b, :])
 
         # initialize generation core states
-        cell_g = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 16, 16))
-        hidden_g = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 16, 16))
-        u = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 64, 64))
+        cell_g = x.new_zeros((B, 128, 16, 16))
+        hidden_g = x.new_zeros((B, 128, 16, 16))
+        u = x.new_zeros((B, 128, 64, 64))
 
         # initialize inference core states
-        cell_e = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 16, 16))
-        hidden_e = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 16, 16))
+        cell_e = x.new_zeros((B, 128, 16, 16))
+        hidden_e = x.new_zeros((B, 128, 16, 16))
 
         # initialize ELBO
         elbo = 0
@@ -150,16 +150,16 @@ class GQNCls(nn.Module):
 
         # Encode scenes
         if self.repr_architecture == 'Tower':
-            r = torch.tensor((), dtype=torch.float64).new_zeros((B, 256, 16, 16))
+            r = x.new_zeros((B, 256, 16, 16))
         else:
-            r = torch.tensor((), dtype=torch.float64).new_zeros((B, 256, 1, 1))
+            r = x.new_zeros((B, 256, 1, 1))
         for b in range(B):
             r[b] = self.repr_net(x[b, :], v[b, :])
 
         # initialize generation core states
-        cell_g = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 16, 16))
-        hidden_g = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 16, 16))
-        u = torch.tensor((), dtype=torch.float64).new_zeros((B, 128, 64, 64))
+        cell_g = x.new_zeros((B, 128, 16, 16))
+        hidden_g = x.new_zeros((B, 128, 16, 16))
+        u = x.new_zeros((B, 128, 64, 64))
 
         for l in range(self.L):
             # prior factor
