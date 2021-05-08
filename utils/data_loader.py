@@ -28,7 +28,8 @@ class RoomsRingCameraDataset(Dataset):
         Get the number of data in the dataset
         """
 
-        return len(os.listdir(self.root))
+        # return len(os.listdir(self.root))
+        return 1000000
 
 
     def __getitem__(self, idx):
