@@ -49,8 +49,8 @@ class GQNCls(nn.Module):
             self.gen_net = GenerationCore()
             self.inf_net = InferenceCore()
         else:
-            self.gen_net = nn.ModuleList([GenerationCore()] * self.L)
-            self.inf_net = nn.ModuleList([InferenceCore()] * self.L)
+            self.gen_net = nn.ModuleList([GenerationCore() for _ in range(self.L)])
+            self.inf_net = nn.ModuleList([InferenceCore() for _ in range(self.L)])
 
         # additional networks for Gaussian latent variable sampling
         self.eta_pi = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
@@ -96,7 +96,7 @@ class GQNCls(nn.Module):
         for l in range(self.L):
             # prior factor
             mu_pi, std_pi = torch.split(self.eta_pi(hidden_g), 3, dim=1)
-            std_pi = 0.5 * torch.exp(std_pi)    # standard deviation >= 0
+            std_pi = torch.exp(0.5 * std_pi)    # standard deviation >= 0
             pi = Normal(mu_pi, std_pi)    # prior distribution
 
             # inference state update
@@ -107,7 +107,7 @@ class GQNCls(nn.Module):
 
             # posterior factor
             mu_q, std_q = torch.split(self.eta_q(hidden_e), 3, dim=1)
-            std_q = 0.5 * torch.exp(std_q)    # standard deviation >= 0
+            std_q = torch.exp(0.5 * std_q)    # standard deviation >= 0
             q = Normal(mu_q, std_q)
 
             # sample posterior latent variable
@@ -132,7 +132,7 @@ class GQNCls(nn.Module):
 
         return -(elbo.mean())
 
-    def generate(self, x, v, v_q, sigma_t):
+    def generate(self, x, v, v_q):
         """
         Generate target image given the sequence of images from the scene,
         camera extrinsic, and the query viewpoint
@@ -180,5 +180,4 @@ class GQNCls(nn.Module):
         mean = self.eta_g(u)
 
         # Return shape -> (B, 3, 64, 64)
-        pred = Normal(mean, sigma_t).sample()
-        return pred
+        return torch.clamp(mu, 0, 1)

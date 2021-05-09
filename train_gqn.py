@@ -143,7 +143,7 @@ def generate_images(test_dataloader, model, sigma_t):
 
     # sample query images/viewpoints from batch
     x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room', num_observations=5)
-    pred = model.generate(x, v, v_q, sigma_t)    # (B, 3, 64, 64)
+    pred = model.generate(x, v, v_q)    # (B, 3, 64, 64)
 
     return x_q, pred
 
@@ -163,7 +163,7 @@ def main():
     test_loader = DataLoader(dataset=test_dataset,
                              batch_size=args.batch_size,
                              shuffle=True,
-                             num_workers=int(args.n_workers))
+                             num_workers=0)
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
