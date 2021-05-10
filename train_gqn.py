@@ -6,11 +6,13 @@ from models.gqn import GQNCls
 
 import argparse
 import os
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
+from utils.scheduler import AnnealingStepLR
 from utils.data_loader import RoomsRingCameraDataset, sample_from_batch
 from tqdm import tqdm
 
@@ -22,33 +24,37 @@ parser = argparse.ArgumentParser()
 
 # data loader parameters
 parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
-parser.add_argument('--n_epochs', type=int, default=2, help='number of epochs')
-parser.add_argument('--n_workers', type=int, default=20, help='number of data loading workers')
+parser.add_argument('--n_workers', type=int, default=0, help='number of data loading workers')
+
+# training parameters
+parser.add_argument('--max_step', type=int, default=2e6, help='maximum number of training steps')
 
 # model parameters
-parser.add_argument('--level', type=int, default=12, help='Number of generation/inference core levels')
-parser.add_argument('--shared_core', type=bool, default=False, help='Use shared generation/inference core')
+parser.add_argument('--level', type=int, default=8, help='number of generation/inference core levels')
+parser.add_argument('--shared_core', type=bool, default=True, help='Use shared generation/inference core')
 
 # optimizer & scheduler parameters
-parser.add_argument('--learning_rate', type=float, default=0.001, help='learning rate')
 parser.add_argument('--beta1', type=float, default=0.9, help='beta 1')
 parser.add_argument('--beta2', type=float, default=0.999, help='beta 2')
-parser.add_argument('--step_size', type=int, default=20, help='step size')
-parser.add_argument('--gamma', type=float, default=0.5, help='gamma')
+parser.add_argument('--eps', type=float, default=1e-8, help='epsilon')
+parser.add_argument('--mu_i', type=float, default=5e-4, help='initial learning rate')
+parser.add_argument('--mu_f', type=float, default=5e-5, help='final learning rate')
 
 # pixel-wise variance
 parser.add_argument('--sigma_i', type=float, default=2.0, help='Pixel standard deviation initial value')
 parser.add_argument('--sigma_f', type=float, default=0.7, help='Pixel standard deviation final value')
-parser.add_argument('--sigma_n', type=int, default=200000, help='Pixel standard deviation step size')
+parser.add_argument('--sigma_n', type=int, default=2e5, help='Pixel standard deviation step size')
 
 # I/O parameters
-parser.add_argument('--model', type=str, default='', help='Path to the pretrained parameters')
+parser.add_argument('--checkpoint', type=str, default='', help='Path to checkpoint file')
 parser.add_argument('--out_dir', type=str, default='outputs',
                     help='output directory')
+parser.add_argument('--gen_interval', type=int, default=100, help='Period for generation core testing')
+parser.add_argument('--save_interval', type=int, default=10000, help='')
 
 args = parser.parse_args()
 
-
+# [Abandoned]
 def train_one_epoch(train_dataset, train_dataloader,
                     test_dataset, test_dataloader,
                     model, optimizer, scheduler, epoch=None, writer=None):
@@ -79,19 +85,26 @@ def train_one_epoch(train_dataset, train_dataloader,
     epoch_str = '' if epoch is None else '[Epoch {}/{}]'.format(
         str(epoch).zfill(len(str(args.n_epochs))), args.n_epochs)
 
+    generate_period = 10
+    save_period = 10000
+
     for i, (f_batch, c_batch) in enumerate(train_dataloader):
 
         f_batch = f_batch.to(device)
         c_batch = c_batch.to(device)
 
         # sample from batch
-        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room', num_observations=5)
+        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room')
 
         # initialize gradients
         optimizer.zero_grad()
 
         # compute ELBO & increment total elbo
-        elbo = model(x, v, x_q, v_q, sigma_t)
+        elbo, kl_div, likelihood = model(x, v, x_q, v_q, sigma_t)
+
+        elbo = -torch.mean(elbo)
+        kl_div = kl_div.mean()
+        likelihood = likelihood.mean()
 
         # back propagation
         elbo.backward()
@@ -110,16 +123,17 @@ def train_one_epoch(train_dataset, train_dataloader,
         pbar.update(batch_size)
 
         # generate images
-        if (i + 1) % 1000 == 0:
+
+        if (i + 1) % generate_period == 0:
             with torch.no_grad():
                 x_q, pred = generate_images(test_dataloader, model, sigma_t)
 
                 if writer:
-                    writer.add_images('GT', x_q, int(i / 1000))
-                    writer.add_images('Prediction', pred, int(i / 1000))
+                    writer.add_images('GT', x_q, int(i / generate_period))
+                    writer.add_images('Prediction', pred, int(i / generate_period))
 
         # save the model
-        if (i + 1) % 10000 == 0:
+        if (i + 1) % save_period == 0:
             model_file = os.path.join(
                 args.out_dir, 'model_{:d}-{:d}.pth'.format(i + 1, epoch))
             torch.save(model.state_dict(), model_file)
@@ -127,25 +141,36 @@ def train_one_epoch(train_dataset, train_dataloader,
 
         # write summary
         if writer:
+            # ELBO & details
             writer.add_scalar('ELBO', elbo, i)
+            writer.add_scalar('KL Divergence', kl_div, i)
+            writer.add_scalar('Likelihood', likelihood, i)
+            writer.add_scalar('sigma', sigma_t, i)
 
     pbar.close()
     n_batch = n_data / args.batch_size
     mean_elbo = total_elbo / n_batch
     return mean_elbo
 
+# [Abandoned]
+def rotate_images(gt, pred):
 
-def generate_images(test_dataloader, model, sigma_t):
-    f_batch, c_batch = next(iter(test_dataloader))
+    num_imgs = gt.size()[0]
+    gt = gt.transpose(1, 3).numpy()
+    pred = pred.transpose(1, 3).numpy()
 
-    f_batch = f_batch.to(device)
-    c_batch = c_batch.to(device)
+    # rotate images
+    for i in range(num_imgs):
+        gt[i] = np.rot90(gt[i], 3)
+        pred[i] = np.rot90(pred[i], 3)
 
-    # sample query images/viewpoints from batch
-    x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room', num_observations=5)
-    pred = model.generate(x, v, v_q)    # (B, 3, 64, 64)
+    gt = torch.from_numpy(gt)
+    pred = torch.from_numpy(pred)
 
-    return x_q, pred
+    gt = gt.transpose(1, 3)
+    pred = pred.transpose(1, 3)
+
+    return gt, pred
 
 
 def main():
@@ -153,51 +178,122 @@ def main():
     print(args)
 
     # load datasets
-    train_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/train')
+    train_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch_small/train')
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size,
                               shuffle=True,
-                              num_workers=int(args.n_workers))
+                              num_workers=int(args.n_workers),
+                              pin_memory=True)
+    train_iter = iter(train_loader)
 
-    test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/test')
+    test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch_small/test')
     test_loader = DataLoader(dataset=test_dataset,
                              batch_size=args.batch_size,
                              shuffle=True,
-                             num_workers=0)
+                             num_workers=0,
+                             pin_memory=True)
+    test_f_batch, test_c_batch = next(iter(test_loader))
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
     if torch.cuda.is_available():
         model.cuda()
-    
-    # ...or load an existing model
-    if args.model != '':
-        model.load_state_dict(torch.load(args.model))
 
     # configure optimizer
     optimizer = optim.Adam(
-        model.parameters(), lr=args.learning_rate,
+        model.parameters(), lr=args.mu_i,
         betas=(args.beta1, args.beta2),
         eps=1e-08)
 
     # configure scheduler
-    scheduler = optim.lr_scheduler.StepLR(
-        optimizer, step_size=args.step_size, gamma=args.gamma)
+    scheduler = AnnealingStepLR(optimizer, args.mu_i, args.mu_f)
+
+    # training step
+    s_begin = 0
+
+    # ...or load an existing checkpoint
+    if args.checkpoint != '':
+        print('Loading checkpoint at: {}'.format(args.checkpoint))
+        checkpoint = torch.load(args.checkpoint)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        s_begin = checkpoint['step']
+
+        model.train()
 
     # create the output directory
     if not os.path.exists(args.out_dir):
         os.mkdir(args.out_dir)
 
+    # Tensorboard
     writer = SummaryWriter(args.out_dir)
 
-    for epoch in range(args.n_epochs):
-        train_one_epoch(train_dataset, train_loader, test_dataset, test_loader, model, optimizer, scheduler, epoch, writer)
+    sigma_i = args.sigma_i
+    sigma_f = args.sigma_f
 
-        # Save the model.
-        model_file = os.path.join(
-                args.out_dir, 'model_{:d}.pth'.format(epoch + 1))
-        torch.save(model.state_dict(), model_file)
-        print("Saved '{}'.".format(model_file))
+    sigma_t = sigma_i
+
+    # training routine
+    for s in tqdm(range(s_begin, int(args.max_step))):
+        try:
+            f_batch, c_batch = next(train_iter)
+        except StopIteration:
+            train_iter = iter(train_loader)
+            f_batch, c_batch = next(train_iter)
+
+        f_batch = f_batch.to(device)
+        c_batch = c_batch.to(device)
+        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch)
+
+        # initialize gradient
+        optimizer.zero_grad()
+
+        # forward
+        elbo, kl_div, likelihood = model(x, v, x_q, v_q, sigma_t)
+
+        # write summary
+        if writer:
+            # ELBO & details
+            writer.add_scalar('ELBO', -elbo.mean(), s)
+            writer.add_scalar('KL Divergence', kl_div.mean(), s)
+            writer.add_scalar('Likelihood', likelihood.mean(), s)
+            writer.add_scalar('sigma', sigma_t, s)
+
+        # back propagation
+        (-elbo.mean()).backward()
+
+        # update optimizer, scheduler
+        optimizer.step()
+        scheduler.step()
+
+        with torch.no_grad():
+            
+            # test generation
+            if (s+1) % args.gen_interval == 0:
+                test_f_batch = test_f_batch.to(device)
+                test_c_batch = test_c_batch.to(device)
+
+                x_test, v_test, x_q_test, v_q_test = sample_from_batch(test_f_batch, test_c_batch)
+                pred = model.generate(x_test, v_test, v_q_test)
+
+                if writer:
+                    writer.add_images('GT', x_q_test, int(s / args.gen_interval))
+                    writer.add_images('Prediction', pred, int(s / args.gen_interval))
+
+            # save checkpoints
+            if (s+1) % args.save_interval == 0:
+                model_file = os.path.join(args.out_dir, 'model_{:d}.pt'.format(s+1))
+                torch.save({
+                    'step': s,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict()
+                }, model_file)
+                print("Saved '{}'.".format(model_file))
+
+        # update pixel-variance
+        sigma_t = max(sigma_f + (sigma_i - sigma_f) * (1 - s / args.sigma_n), sigma_f)
 
     writer.close()
 
