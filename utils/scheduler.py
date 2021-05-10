@@ -11,5 +11,4 @@ class AnnealingStepLR(_LRScheduler):
         super(AnnealingStepLR, self).__init__(optimizer)
 
     def get_lr(self):
-        return max(self.mu_f +(self.mu_i - self.mu_f) * (1 - self.last_epoch / self.n), self.mu_f)
-        
+        return [max(self.mu_f +(self.mu_i - self.mu_f) * (1.0 - self.last_epoch / self.n), self.mu_f) for base_lr in self.base_lrs]
