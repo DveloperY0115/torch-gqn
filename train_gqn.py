@@ -2,6 +2,7 @@
 Training routine for GQN on 'rooms ring camera' dataset.
 """
 
+from random import sample
 from models.gqn import GQNCls
 
 import argparse
@@ -11,6 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
+from models.scheduler import AnnealingStepLR
 from utils.data_loader import RoomsRingCameraDataset, sample_from_batch
 from tqdm import tqdm
 
@@ -22,7 +24,7 @@ parser = argparse.ArgumentParser()
 
 # data loader parameters
 parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
-parser.add_argument('--n_epochs', type=int, default=2, help='number of epochs')
+parser.add_argument('--n_iter', type=int, default=1000000, help='number of iterations')
 parser.add_argument('--n_workers', type=int, default=20, help='number of data loading workers')
 
 # model parameters
@@ -43,6 +45,8 @@ parser.add_argument('--sigma_n', type=int, default=200000, help='Pixel standard 
 
 # I/O parameters
 parser.add_argument('--model', type=str, default='', help='Path to the pretrained parameters')
+parser.add_argument('--gen_interval', type=int, default=100)
+parser.add_argument('--save_interval', type=int, default=10000)
 parser.add_argument('--out_dir', type=str, default='outputs',
                     help='output directory')
 
@@ -158,12 +162,20 @@ def main():
                               batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=int(args.n_workers))
+    train_iter = iter(train_loader)
 
     test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/test')
     test_loader = DataLoader(dataset=test_dataset,
                              batch_size=args.batch_size,
                              shuffle=True,
                              num_workers=0)
+    test_iter = iter(test_loader)
+
+    # prepare data for testing
+    f_test_batch, c_test_batch = next(test_iter)
+    f_test_batch = f_test_batch.to(device)
+    c_test_batch = c_test_batch.to(device)
+    x_test, v_test, x_q_test, v_q_test = sample_from_batch(f_test_batch, c_test_batch)
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
@@ -181,8 +193,10 @@ def main():
         eps=1e-08)
 
     # configure scheduler
-    scheduler = optim.lr_scheduler.StepLR(
-        optimizer, step_size=args.step_size, gamma=args.gamma)
+    scheduler = AnnealingStepLR(optimizer)
+
+    # initialize pixel variance
+    sigma = args.sigma_i
 
     # create the output directory
     if not os.path.exists(args.out_dir):
@@ -190,6 +204,60 @@ def main():
 
     writer = SummaryWriter(args.out_dir)
 
+    for s in tqdm(range(args.n_iter)):
+        try:
+            f_batch, c_batch = next(train_iter)
+        except StopIteration:
+            train_iter = iter(train_loader)
+            f_batch, c_batch = next(train_iter)
+
+        f_batch = f_batch.to(device)
+        c_batch = c_batch.to(device)
+        
+        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch)
+
+        optimizer.zero_grad()
+
+        elbo = model(x, v, x_q, v_q, sigma)
+
+        # back propagation
+        elbo.backward()
+        optimizer.step()
+
+        # update scheduler
+        scheduler.step()
+
+        # Pixel-variance annealing
+        sigma = max(args.sigma_f + (args.sigma_i - args.sigma_f)*(1 - s/(2e5)), args.sigma_f)
+
+        if writer:
+            writer.add_scalar('Train loss', elbo, s)
+
+        with torch.no_grad():
+
+            # generate images and record
+            if (s+1) % args.gen_interval == 0:
+                pred = model.generate(x_test, v_test, v_q_test)
+
+                if writer:
+                    writer.add_images('GT', x_q_test)
+                    writer.add_iamges('Prediction', pred)
+
+            # add checkpoint
+            if (s+1) % args.save_interval == 0:
+                filename = os.path.join(args.out_dir, '{}.tar'.format(s+1))
+                torch.save({
+                    'step': s,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler': scheduler.state_dict()
+                }, filename)
+
+                print('Saved {}'.format(filename))
+
+
+
+    """
     for epoch in range(args.n_epochs):
         train_one_epoch(train_dataset, train_loader, test_dataset, test_loader, model, optimizer, scheduler, epoch, writer)
 
@@ -200,7 +268,7 @@ def main():
         print("Saved '{}'.".format(model_file))
 
     writer.close()
-
+    """
 
 if __name__ == '__main__':
     main()
