@@ -24,40 +24,55 @@ print(device)
 parser = argparse.ArgumentParser()
 
 # data loader parameters
-parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
+parser.add_argument('--batch_size', type=int,
+                    default=36, help='input batch size')
 
-parser.add_argument('--n_workers', type=int, default=0, help='number of data loading workers')
+parser.add_argument('--n_workers', type=int, default=0,
+                    help='number of data loading workers')
 
 # training parameters
-parser.add_argument('--max_step', type=int, default=2e6, help='maximum number of training steps')
+parser.add_argument('--max_step', type=int, default=2e6,
+                    help='maximum number of training steps')
 
 
 # model parameters
-parser.add_argument('--level', type=int, default=8, help='number of generation/inference core levels')
-parser.add_argument('--shared_core', type=bool, default=False, help='Use shared generation/inference core')
+parser.add_argument('--level', type=int, default=8,
+                    help='number of generation/inference core levels')
+parser.add_argument('--shared_core', type=bool, default=False,
+                    help='Use shared generation/inference core')
 
 # optimizer & scheduler parameters
 parser.add_argument('--beta1', type=float, default=0.9, help='beta 1')
 parser.add_argument('--beta2', type=float, default=0.999, help='beta 2')
 parser.add_argument('--eps', type=float, default=1e-8, help='epsilon')
-parser.add_argument('--mu_i', type=float, default=5e-4, help='initial learning rate')
-parser.add_argument('--mu_f', type=float, default=5e-5, help='final learning rate')
+parser.add_argument('--mu_i', type=float, default=5e-4,
+                    help='initial learning rate')
+parser.add_argument('--mu_f', type=float, default=5e-5,
+                    help='final learning rate')
 
 # pixel-wise variance
-parser.add_argument('--sigma_i', type=float, default=2.0, help='Pixel standard deviation initial value')
-parser.add_argument('--sigma_f', type=float, default=0.7, help='Pixel standard deviation final value')
-parser.add_argument('--sigma_n', type=int, default=2e5, help='Pixel standard deviation step size')
+parser.add_argument('--sigma_i', type=float, default=2.0,
+                    help='Pixel standard deviation initial value')
+parser.add_argument('--sigma_f', type=float, default=0.7,
+                    help='Pixel standard deviation final value')
+parser.add_argument('--sigma_n', type=int, default=2e5,
+                    help='Pixel standard deviation step size')
 
 # I/O parameters
-parser.add_argument('--checkpoint', type=str, default='', help='Path to checkpoint file')
+parser.add_argument('--checkpoint', type=str, default='',
+                    help='Path to checkpoint file')
 parser.add_argument('--out_dir', type=str, default='outputs',
                     help='output directory')
-parser.add_argument('--gen_interval', type=int, default=100, help='Period for generation core testing')
-parser.add_argument('--save_interval', type=int, default=10000, help='Period for making checkpoint')
+parser.add_argument('--gen_interval', type=int, default=100,
+                    help='Period for generation core testing')
+parser.add_argument('--save_interval', type=int,
+                    default=10000, help='Period for making checkpoint')
 
 args = parser.parse_args()
 
 # [Abandoned]
+
+
 def train_one_epoch(train_dataset, train_dataloader,
                     test_dataset, test_dataloader,
                     model, optimizer, scheduler, epoch=None, writer=None):
@@ -117,7 +132,8 @@ def train_one_epoch(train_dataset, train_dataloader,
         scheduler.step()
 
         # update pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f) * (1 - i / args.sigma_n), args.sigma_f)
+        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)
+                      * (1 - i / args.sigma_n), args.sigma_f)
 
         batch_size = x.shape[0]
         total_elbo += elbo
@@ -132,7 +148,8 @@ def train_one_epoch(train_dataset, train_dataloader,
 
                 if writer:
                     writer.add_images('GT', x_q, int(i / generate_period))
-                    writer.add_images('Prediction', pred, int(i / generate_period))
+                    writer.add_images('Prediction', pred,
+                                      int(i / generate_period))
 
         # save the model
         if (i + 1) % save_period == 0:
@@ -155,6 +172,8 @@ def train_one_epoch(train_dataset, train_dataloader,
     return mean_elbo
 
 # [Abandoned]
+
+
 def rotate_images(gt, pred):
 
     num_imgs = gt.size()[0]
@@ -180,7 +199,8 @@ def main():
     print(args)
 
     # load datasets
-    train_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/train')
+    train_dataset = RoomsRingCameraDataset(
+        './data/rooms_ring_camera_torch/train')
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size,
                               shuffle=True,
@@ -189,7 +209,8 @@ def main():
 
     train_iter = iter(train_loader)
 
-    test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/test')
+    test_dataset = RoomsRingCameraDataset(
+        './data/rooms_ring_camera_torch/test')
     test_loader = DataLoader(dataset=test_dataset,
                              batch_size=args.batch_size,
                              shuffle=True,
@@ -201,9 +222,10 @@ def main():
     gen_f_batch, gen_c_batch = next(test_iter)
     gen_f_batch = gen_f_batch.to(device)
     gen_c_batch = gen_c_batch.to(device)
-    
+
     # construct model
-    model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
+    model = GQNCls(repr_architecture='Tower', L=args.level,
+                   shared_core=args.shared_core)
     if torch.cuda.is_available():
         model.cuda()
 
@@ -268,7 +290,8 @@ def main():
         scheduler.step()
 
         # Pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)*(1 - s/(2e5)), args.sigma_f)
+        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)
+                      * (1 - s/(2e5)), args.sigma_f)
 
         # write summary
         if writer:
@@ -285,11 +308,12 @@ def main():
             except StopIteration:
                 test_iter = iter(test_loader)
                 test_f_batch, test_c_batch = next(test_iter)
-                
+
             test_f_batch = test_f_batch.to(device)
             test_c_batch = test_c_batch.to(device)
-            x_test, v_test, x_q_test, v_q_test = sample_from_batch(test_f_batch, test_c_batch)
-          
+            x_test, v_test, x_q_test, v_q_test = sample_from_batch(
+                test_f_batch, test_c_batch)
+
             # generate images and record
             if (s+1) % args.gen_interval == 0:
                 pred = model.generate(x_test, v_test, v_q_test)
@@ -309,7 +333,7 @@ def main():
                 }, filename)
 
                 print('Saved {}'.format(filename))
-    
+
     writer.close()
 
     """
@@ -384,6 +408,7 @@ def main():
 
     writer.close()
     """
+
 
 if __name__ == '__main__':
     main()

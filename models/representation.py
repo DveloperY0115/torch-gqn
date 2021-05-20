@@ -81,7 +81,8 @@ class TowerCls(nn.Module):
 
         # Conv layers for skip connections
         self.conv_skip_1 = nn.Conv2d(256, 256, kernel_size=2, stride=2)
-        self.conv_skip_2 = nn.Conv2d(263, 256, kernel_size=3, stride=1, padding=1)
+        self.conv_skip_2 = nn.Conv2d(
+            263, 256, kernel_size=3, stride=1, padding=1)
 
         # Batch Norm layers
         self.bn_1 = nn.BatchNorm2d(256)
@@ -90,7 +91,6 @@ class TowerCls(nn.Module):
         self.bn_4 = nn.BatchNorm2d(128)
         self.bn_5 = nn.BatchNorm2d(256)
         self.bn_6 = nn.BatchNorm2d(256)
-
 
     def forward(self, x, y):
         """
