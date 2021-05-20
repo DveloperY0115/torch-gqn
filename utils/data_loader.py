@@ -60,7 +60,7 @@ class RoomsRingCameraDataset(Dataset):
         return frames, cameras
 
 
-def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observations=5, seed=None):
+def sample_from_batch(frame_batch, camera_batch, dataset='Room', num_observations=None, seed=None):
     """
     Sample random number of views from each scenes in a batch
 

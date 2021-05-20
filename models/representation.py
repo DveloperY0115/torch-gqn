@@ -91,6 +91,7 @@ class TowerCls(nn.Module):
         self.bn_5 = nn.BatchNorm2d(256)
         self.bn_6 = nn.BatchNorm2d(256)
 
+
     def forward(self, x, y):
         """
         Forward propagation
@@ -109,12 +110,15 @@ class TowerCls(nn.Module):
             y = torch.Tensor(y)
 
         x = F.relu(self.bn_1(self.conv_1(x)))
+        # x = F.relu(self.conv_1(x))
 
         # Residual connection
         skip = self.conv_skip_1(x)
 
         x = F.relu(self.bn_2(self.conv_2(x)))
-        x = F.relu(self.bn_3(self.conv_3(x) + skip))
+        x = F.relu(self.bn_3(self.conv_3(x)) + skip)
+        # x = F.relu(self.conv_2(x))
+        # x = F.relu(self.conv_3(x)) + skip
 
         # Concatenate view point information
         y = y.repeat(1, 1, 16, 16)
@@ -125,10 +129,13 @@ class TowerCls(nn.Module):
         skip = self.conv_skip_2(x)
 
         x = F.relu(self.bn_4(self.conv_4(x)))
+        # x = F.relu(self.conv_4(x))
 
         x = F.relu(self.bn_5(self.conv_5(x) + skip))
+        # x = F.relu(self.conv_5(x)) + skip
 
         x = F.relu(self.bn_6(self.conv_6(x)))
+        # x = F.relu(self.conv_6(x))
 
         # aggregate representation from different observations into one
         x = torch.sum(x, dim=0, keepdim=True)

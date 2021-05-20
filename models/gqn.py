@@ -57,6 +57,7 @@ class GQNCls(nn.Module):
         self.eta_q = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
         self.eta_g = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
 
+
     def forward(self, x, v, x_q, v_q, sigma_t):
         """
         Calculate ELBO, given the training data
@@ -125,12 +126,15 @@ class GQNCls(nn.Module):
             # ELBO <- ELBO - KL(...)
             elbo -= torch.sum(kl_div, dim=[1, 2, 3])
 
+        total_kl_div = elbo
+
         # calculate log likelihood contribution
         mu = self.eta_g(u)
         likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
         elbo += likelihood
 
-        return -(elbo.mean())
+        return elbo, total_kl_div, likelihood
+        
 
     def generate(self, x, v, v_q):
         """
@@ -164,7 +168,7 @@ class GQNCls(nn.Module):
         for l in range(self.L):
             # prior factor
             mean_pi, std_pi = torch.split(self.eta_pi(hidden_g), 3, dim=1)  # (B, 3, 16, 16) each
-            std_pi = 0.5 * torch.exp(std_pi)
+            std_pi = torch.exp(0.5 * std_pi)
             pi = Normal(mean_pi, std_pi)
 
             # sample prior latent variable
@@ -180,4 +184,4 @@ class GQNCls(nn.Module):
         mean = self.eta_g(u)
 
         # Return shape -> (B, 3, 64, 64)
-        return torch.clamp(mu, 0, 1)
+        return torch.clamp(mean, 0, 1)
