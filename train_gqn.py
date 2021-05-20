@@ -80,9 +80,6 @@ def train_one_epoch(train_dataset, train_dataloader,
     # Create a progress bar
     pbar = tqdm(total=n_data, leave=False)
 
-    epoch_str = '' if epoch is None else '[Epoch {}/{}]'.format(
-        str(epoch).zfill(len(str(args.n_epochs))), args.n_epochs)
-
     for i, (f_batch, c_batch) in enumerate(train_dataloader):
 
         f_batch = f_batch.to(device)
@@ -110,7 +107,6 @@ def train_one_epoch(train_dataset, train_dataloader,
         batch_size = x.shape[0]
         total_elbo += elbo
 
-        pbar.set_description('{} ELBO: {:f}'.format(epoch_str, elbo))
         pbar.update(batch_size)
 
         # generate images
@@ -139,7 +135,7 @@ def train_one_epoch(train_dataset, train_dataloader,
     return mean_elbo
 
 
-def generate_images(test_dataloader, model, sigma_t):
+def generate_images(test_dataloader, model):
     f_batch, c_batch = next(iter(test_dataloader))
 
     f_batch = f_batch.to(device)
