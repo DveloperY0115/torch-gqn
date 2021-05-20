@@ -1,14 +1,16 @@
 """
 GQN
 """
-
 import torch
 import torch.nn as nn
 from torch.distributions import Normal
 from torch.distributions.kl import kl_divergence
 
-from .core import GenerationCore, InferenceCore
-from .representation import PoolCls, PyramidCls, TowerCls
+from .core import GenerationCore
+from .core import InferenceCore
+from .representation import PoolCls
+from .representation import PyramidCls
+from .representation import TowerCls
 
 
 class GQNCls(nn.Module):

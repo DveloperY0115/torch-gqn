@@ -1,7 +1,6 @@
 """
 Training routine for GQN on 'rooms ring camera' dataset.
 """
-
 import argparse
 import os
 from random import sample
@@ -15,7 +14,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from models.gqn import GQNCls
-from utils.data_loader import RoomsRingCameraDataset, sample_from_batch
+from utils.data_loader import RoomsRingCameraDataset
+from utils.data_loader import sample_from_batch
 from utils.scheduler import AnnealingStepLR
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
