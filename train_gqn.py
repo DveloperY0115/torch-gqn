@@ -17,65 +17,82 @@ from utils.scheduler import AnnealingStepLR
 from utils.data_loader import RoomsRingCameraDataset, sample_from_batch
 from tqdm import tqdm
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Parse arguments
 parser = argparse.ArgumentParser()
 
 # data loader parameters
-parser.add_argument('--batch_size', type=int,
-                    default=36, help='input batch size')
+parser.add_argument("--batch_size", type=int, default=36, help="input batch size")
 
-parser.add_argument('--n_workers', type=int, default=0,
-                    help='number of data loading workers')
+parser.add_argument(
+    "--n_workers", type=int, default=0, help="number of data loading workers"
+)
 
 # training parameters
-parser.add_argument('--max_step', type=int, default=2e6,
-                    help='maximum number of training steps')
+parser.add_argument(
+    "--max_step", type=int, default=2e6, help="maximum number of training steps"
+)
 
 
 # model parameters
-parser.add_argument('--level', type=int, default=8,
-                    help='number of generation/inference core levels')
-parser.add_argument('--shared_core', type=bool, default=False,
-                    help='Use shared generation/inference core')
+parser.add_argument(
+    "--level", type=int, default=8, help="number of generation/inference core levels"
+)
+parser.add_argument(
+    "--shared_core",
+    type=bool,
+    default=False,
+    help="Use shared generation/inference core",
+)
 
 # optimizer & scheduler parameters
-parser.add_argument('--beta1', type=float, default=0.9, help='beta 1')
-parser.add_argument('--beta2', type=float, default=0.999, help='beta 2')
-parser.add_argument('--eps', type=float, default=1e-8, help='epsilon')
-parser.add_argument('--mu_i', type=float, default=5e-4,
-                    help='initial learning rate')
-parser.add_argument('--mu_f', type=float, default=5e-5,
-                    help='final learning rate')
+parser.add_argument("--beta1", type=float, default=0.9, help="beta 1")
+parser.add_argument("--beta2", type=float, default=0.999, help="beta 2")
+parser.add_argument("--eps", type=float, default=1e-8, help="epsilon")
+parser.add_argument("--mu_i", type=float, default=5e-4, help="initial learning rate")
+parser.add_argument("--mu_f", type=float, default=5e-5, help="final learning rate")
 
 # pixel-wise variance
-parser.add_argument('--sigma_i', type=float, default=2.0,
-                    help='Pixel standard deviation initial value')
-parser.add_argument('--sigma_f', type=float, default=0.7,
-                    help='Pixel standard deviation final value')
-parser.add_argument('--sigma_n', type=int, default=2e5,
-                    help='Pixel standard deviation step size')
+parser.add_argument(
+    "--sigma_i", type=float, default=2.0, help="Pixel standard deviation initial value"
+)
+parser.add_argument(
+    "--sigma_f", type=float, default=0.7, help="Pixel standard deviation final value"
+)
+parser.add_argument(
+    "--sigma_n", type=int, default=2e5, help="Pixel standard deviation step size"
+)
 
 # I/O parameters
-parser.add_argument('--checkpoint', type=str, default='',
-                    help='Path to checkpoint file')
-parser.add_argument('--out_dir', type=str, default='outputs',
-                    help='output directory')
-parser.add_argument('--gen_interval', type=int, default=100,
-                    help='Period for generation core testing')
-parser.add_argument('--save_interval', type=int,
-                    default=10000, help='Period for making checkpoint')
+parser.add_argument(
+    "--checkpoint", type=str, default="", help="Path to checkpoint file"
+)
+parser.add_argument("--out_dir", type=str, default="outputs", help="output directory")
+parser.add_argument(
+    "--gen_interval", type=int, default=100, help="Period for generation core testing"
+)
+parser.add_argument(
+    "--save_interval", type=int, default=10000, help="Period for making checkpoint"
+)
 
 args = parser.parse_args()
 
 # [Abandoned]
 
 
-def train_one_epoch(train_dataset, train_dataloader,
-                    test_dataset, test_dataloader,
-                    model, optimizer, scheduler, epoch=None, writer=None):
+def train_one_epoch(
+    train_dataset,
+    train_dataloader,
+    test_dataset,
+    test_dataloader,
+    model,
+    optimizer,
+    scheduler,
+    epoch=None,
+    writer=None,
+):
     """
     Train the model in one epoch
     Generate images in every 1000 iteration
@@ -100,8 +117,13 @@ def train_one_epoch(train_dataset, train_dataloader,
     # Create a progress bar
     pbar = tqdm(total=n_data, leave=False)
 
-    epoch_str = '' if epoch is None else '[Epoch {}/{}]'.format(
-        str(epoch).zfill(len(str(args.n_epochs))), args.n_epochs)
+    epoch_str = (
+        ""
+        if epoch is None
+        else "[Epoch {}/{}]".format(
+            str(epoch).zfill(len(str(args.n_epochs))), args.n_epochs
+        )
+    )
 
     generate_period = 10
     save_period = 10000
@@ -112,7 +134,7 @@ def train_one_epoch(train_dataset, train_dataloader,
         c_batch = c_batch.to(device)
 
         # sample from batch
-        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room')
+        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset="Room")
 
         # initialize gradients
         optimizer.zero_grad()
@@ -132,8 +154,10 @@ def train_one_epoch(train_dataset, train_dataloader,
         scheduler.step()
 
         # update pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)
-                      * (1 - i / args.sigma_n), args.sigma_f)
+        sigma_t = max(
+            args.sigma_f + (args.sigma_i - args.sigma_f) * (1 - i / args.sigma_n),
+            args.sigma_f,
+        )
 
         batch_size = x.shape[0]
         total_elbo += elbo
@@ -147,29 +171,30 @@ def train_one_epoch(train_dataset, train_dataloader,
                 x_q, pred = generate_images(test_dataloader, model, sigma_t)
 
                 if writer:
-                    writer.add_images('GT', x_q, int(i / generate_period))
-                    writer.add_images('Prediction', pred,
-                                      int(i / generate_period))
+                    writer.add_images("GT", x_q, int(i / generate_period))
+                    writer.add_images("Prediction", pred, int(i / generate_period))
 
         # save the model
         if (i + 1) % save_period == 0:
             model_file = os.path.join(
-                args.out_dir, 'model_{:d}-{:d}.pth'.format(i + 1, epoch))
+                args.out_dir, "model_{:d}-{:d}.pth".format(i + 1, epoch)
+            )
             torch.save(model.state_dict(), model_file)
             print("Saved '{}'.".format(model_file))
 
         # write summary
         if writer:
             # ELBO & details
-            writer.add_scalar('ELBO', elbo, i)
-            writer.add_scalar('KL Divergence', kl_div, i)
-            writer.add_scalar('Likelihood', likelihood, i)
-            writer.add_scalar('sigma', sigma_t, i)
+            writer.add_scalar("ELBO", elbo, i)
+            writer.add_scalar("KL Divergence", kl_div, i)
+            writer.add_scalar("Likelihood", likelihood, i)
+            writer.add_scalar("sigma", sigma_t, i)
 
     pbar.close()
     n_batch = n_data / args.batch_size
     mean_elbo = total_elbo / n_batch
     return mean_elbo
+
 
 # [Abandoned]
 
@@ -199,23 +224,25 @@ def main():
     print(args)
 
     # load datasets
-    train_dataset = RoomsRingCameraDataset(
-        './data/rooms_ring_camera_torch/train')
-    train_loader = DataLoader(dataset=train_dataset,
-                              batch_size=args.batch_size,
-                              shuffle=True,
-                              num_workers=int(args.n_workers),
-                              pin_memory=True)
+    train_dataset = RoomsRingCameraDataset("./data/rooms_ring_camera_torch/train")
+    train_loader = DataLoader(
+        dataset=train_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=int(args.n_workers),
+        pin_memory=True,
+    )
 
     train_iter = iter(train_loader)
 
-    test_dataset = RoomsRingCameraDataset(
-        './data/rooms_ring_camera_torch/test')
-    test_loader = DataLoader(dataset=test_dataset,
-                             batch_size=args.batch_size,
-                             shuffle=True,
-                             num_workers=0,
-                             pin_memory=True)
+    test_dataset = RoomsRingCameraDataset("./data/rooms_ring_camera_torch/test")
+    test_loader = DataLoader(
+        dataset=test_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=0,
+        pin_memory=True,
+    )
     test_iter = iter(test_loader)
 
     # grab the first batch from the test loader (will be used for visualization throughout the process)
@@ -224,16 +251,16 @@ def main():
     gen_c_batch = gen_c_batch.to(device)
 
     # construct model
-    model = GQNCls(repr_architecture='Tower', L=args.level,
-                   shared_core=args.shared_core)
+    model = GQNCls(
+        repr_architecture="Tower", L=args.level, shared_core=args.shared_core
+    )
     if torch.cuda.is_available():
         model.cuda()
 
     # configure optimizer
     optimizer = optim.Adam(
-        model.parameters(), lr=args.mu_i,
-        betas=(args.beta1, args.beta2),
-        eps=1e-08)
+        model.parameters(), lr=args.mu_i, betas=(args.beta1, args.beta2), eps=1e-08
+    )
 
     # configure scheduler
     scheduler = AnnealingStepLR(optimizer, args.mu_i, args.mu_f)
@@ -242,13 +269,13 @@ def main():
     s_begin = 0
 
     # ...or load an existing checkpoint
-    if args.checkpoint != '':
-        print('Loading checkpoint at: {}'.format(args.checkpoint))
+    if args.checkpoint != "":
+        print("Loading checkpoint at: {}".format(args.checkpoint))
         checkpoint = torch.load(args.checkpoint)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        s_begin = checkpoint['step']
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+        s_begin = checkpoint["step"]
 
         model.train()
 
@@ -290,17 +317,22 @@ def main():
         scheduler.step()
 
         # Pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)
-                      * (1 - s/(2e5)), args.sigma_f)
+        sigma_t = max(
+            args.sigma_f + (args.sigma_i - args.sigma_f) * (1 - s / (2e5)), args.sigma_f
+        )
 
         # write summary
         if writer:
-            writer.add_scalars('Train statistics', {
-                'ELBO (avg)': -elbo.mean(),
-                'KL Divergence (avg)': kl_div.mean(),
-                'Likelihood (avg)': likelihood.mean(),
-                'sigma (avg)': sigma_t
-            }, s)
+            writer.add_scalars(
+                "Train statistics",
+                {
+                    "ELBO (avg)": -elbo.mean(),
+                    "KL Divergence (avg)": kl_div.mean(),
+                    "Likelihood (avg)": likelihood.mean(),
+                    "sigma (avg)": sigma_t,
+                },
+                s,
+            )
 
         with torch.no_grad():
             try:
@@ -312,27 +344,31 @@ def main():
             test_f_batch = test_f_batch.to(device)
             test_c_batch = test_c_batch.to(device)
             x_test, v_test, x_q_test, v_q_test = sample_from_batch(
-                test_f_batch, test_c_batch)
+                test_f_batch, test_c_batch
+            )
 
             # generate images and record
-            if (s+1) % args.gen_interval == 0:
+            if (s + 1) % args.gen_interval == 0:
                 pred = model.generate(x_test, v_test, v_q_test)
 
                 if writer:
-                    writer.add_images('GT', x_q_test)
-                    writer.add_iamges('Prediction', pred)
+                    writer.add_images("GT", x_q_test)
+                    writer.add_iamges("Prediction", pred)
 
             # add checkpoint
-            if (s+1) % args.save_interval == 0:
-                filename = os.path.join(args.out_dir, '{}.tar'.format(s+1))
-                torch.save({
-                    'step': s,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'scheduler': scheduler.state_dict()
-                }, filename)
+            if (s + 1) % args.save_interval == 0:
+                filename = os.path.join(args.out_dir, "{}.tar".format(s + 1))
+                torch.save(
+                    {
+                        "step": s,
+                        "model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        "scheduler": scheduler.state_dict(),
+                    },
+                    filename,
+                )
 
-                print('Saved {}'.format(filename))
+                print("Saved {}".format(filename))
 
     writer.close()
 
@@ -410,5 +446,5 @@ def main():
     """
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

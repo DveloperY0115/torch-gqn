@@ -8,7 +8,6 @@ import torch.nn.functional as F
 
 
 class PyramidCls(nn.Module):
-
     def __init__(self):
         """
         Pyramid architecture for scene representation
@@ -63,7 +62,6 @@ class PyramidCls(nn.Module):
 
 
 class TowerCls(nn.Module):
-
     def __init__(self):
         """
         Tower architecture for scene representation
@@ -81,8 +79,7 @@ class TowerCls(nn.Module):
 
         # Conv layers for skip connections
         self.conv_skip_1 = nn.Conv2d(256, 256, kernel_size=2, stride=2)
-        self.conv_skip_2 = nn.Conv2d(
-            263, 256, kernel_size=3, stride=1, padding=1)
+        self.conv_skip_2 = nn.Conv2d(263, 256, kernel_size=3, stride=1, padding=1)
 
         # Batch Norm layers
         self.bn_1 = nn.BatchNorm2d(256)
@@ -145,7 +142,6 @@ class TowerCls(nn.Module):
 
 
 class PoolCls(TowerCls):
-
     def __init__(self):
         """
         Pool architecture for scene representation
