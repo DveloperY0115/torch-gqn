@@ -2,20 +2,21 @@
 Training routine for GQN on 'rooms ring camera' dataset.
 """
 
-from random import sample
-from models.gqn import GQNCls
-
 import argparse
 import os
+from random import sample
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
-from utils.scheduler import AnnealingStepLR
-from utils.data_loader import RoomsRingCameraDataset, sample_from_batch
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+
+from models.gqn import GQNCls
+from utils.data_loader import RoomsRingCameraDataset, sample_from_batch
+from utils.scheduler import AnnealingStepLR
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)

@@ -6,8 +6,9 @@ import torch
 import torch.nn as nn
 from torch.distributions import Normal
 from torch.distributions.kl import kl_divergence
-from .representation import PyramidCls, TowerCls, PoolCls
+
 from .core import GenerationCore, InferenceCore
+from .representation import PoolCls, PyramidCls, TowerCls
 
 
 class GQNCls(nn.Module):
