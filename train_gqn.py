@@ -2,6 +2,7 @@
 Training routine for GQN on 'rooms ring camera' dataset.
 """
 
+from random import sample
 from models.gqn import GQNCls
 
 import argparse
@@ -24,10 +25,12 @@ parser = argparse.ArgumentParser()
 
 # data loader parameters
 parser.add_argument('--batch_size', type=int, default=36, help='input batch size')
+
 parser.add_argument('--n_workers', type=int, default=0, help='number of data loading workers')
 
 # training parameters
 parser.add_argument('--max_step', type=int, default=2e6, help='maximum number of training steps')
+
 
 # model parameters
 parser.add_argument('--level', type=int, default=8, help='number of generation/inference core levels')
@@ -119,7 +122,6 @@ def train_one_epoch(train_dataset, train_dataloader,
         batch_size = x.shape[0]
         total_elbo += elbo
 
-        pbar.set_description('{} ELBO: {:f}'.format(epoch_str, elbo))
         pbar.update(batch_size)
 
         # generate images
@@ -184,6 +186,7 @@ def main():
                               shuffle=True,
                               num_workers=int(args.n_workers),
                               pin_memory=True)
+
     train_iter = iter(train_loader)
 
     test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/test')
@@ -257,6 +260,65 @@ def main():
         # forward
         elbo, kl_div, likelihood = model(x, v, x_q, v_q, sigma_t)
 
+        # back propagation
+        (-elbo.mean()).backward()
+
+        # update optimizer, scheduler
+        optimizer.step()
+        scheduler.step()
+
+        # Pixel-variance annealing
+        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)*(1 - s/(2e5)), args.sigma_f)
+
+        # write summary
+        if writer:
+            writer.add_scalars('Train statistics', {
+                'ELBO (avg)': -elbo.mean(),
+                'KL Divergence (avg)': kl_div.mean(),
+                'Likelihood (avg)': likelihood.mean(),
+                'sigma (avg)': sigma_t
+            }, s)
+
+        with torch.no_grad():
+            try:
+                test_f_batch, test_c_batch = next(test_iter)
+            except StopIteration:
+                test_iter = iter(test_loader)
+                test_f_batch, test_c_batch = next(test_iter)
+                
+            test_f_batch = test_f_batch.to(device)
+            test_c_batch = test_c_batch.to(device)
+            x_test, v_test, x_q_test, v_q_test = sample_from_batch(test_f_batch, test_c_batch)
+          
+            # generate images and record
+            if (s+1) % args.gen_interval == 0:
+                pred = model.generate(x_test, v_test, v_q_test)
+
+                if writer:
+                    writer.add_images('GT', x_q_test)
+                    writer.add_iamges('Prediction', pred)
+
+            # add checkpoint
+            if (s+1) % args.save_interval == 0:
+                filename = os.path.join(args.out_dir, '{}.tar'.format(s+1))
+                torch.save({
+                    'step': s,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler': scheduler.state_dict()
+                }, filename)
+
+                print('Saved {}'.format(filename))
+    
+    writer.close()
+
+    """
+    for epoch in range(args.n_epochs):
+        train_one_epoch(train_dataset, train_loader, test_dataset, test_loader, model, optimizer, scheduler, epoch, writer)
+
+        # forward
+        elbo, kl_div, likelihood = model(x, v, x_q, v_q, sigma_t)
+
         # write summary
         if writer:
             writer.add_scalars('Train statistics', {
@@ -321,7 +383,7 @@ def main():
         sigma_t = max(sigma_f + (sigma_i - sigma_f) * (1 - s / args.sigma_n), sigma_f)
 
     writer.close()
-
+    """
 
 if __name__ == '__main__':
     main()

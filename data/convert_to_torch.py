@@ -51,8 +51,6 @@ def main():
     total = 1000000
 
     pbar = tqdm(total=total, leave=False)
-    pbar_str = 'Processing Training TFRecord: {}/{}'.format(
-        str(cnt).zfill(len(str(total))), total)
 
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
@@ -66,7 +64,6 @@ def main():
 
         cnt += i
         pbar.update(cnt)
-        pbar.set_description('{}'.format(pbar_str))
 
         # restrict the number of train data samples -> 1 M
         if cnt >= total:
@@ -82,8 +79,6 @@ def main():
     total = 200000
 
     pbar = tqdm(total=total, leave=False)
-    pbar_str = 'Processing Test TFRecord: {}/{}'.format(
-        str(cnt).zfill(len(str(total))), total)
 
     for file in files:
         engine = tf.python_io.tf_record_iterator(file)
@@ -96,7 +91,6 @@ def main():
 
         cnt += i
         pbar.update(cnt)
-        pbar.set_description('{}'.format(pbar_str))
 
         # restrict the number of data samples -> 200 Thousand
         if cnt >= total:
