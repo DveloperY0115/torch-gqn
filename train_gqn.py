@@ -31,7 +31,7 @@ parser.add_argument('--max_step', type=int, default=2e6, help='maximum number of
 
 # model parameters
 parser.add_argument('--level', type=int, default=8, help='number of generation/inference core levels')
-parser.add_argument('--shared_core', type=bool, default=True, help='Use shared generation/inference core')
+parser.add_argument('--shared_core', type=bool, default=False, help='Use shared generation/inference core')
 
 # optimizer & scheduler parameters
 parser.add_argument('--beta1', type=float, default=0.9, help='beta 1')
@@ -50,7 +50,7 @@ parser.add_argument('--checkpoint', type=str, default='', help='Path to checkpoi
 parser.add_argument('--out_dir', type=str, default='outputs',
                     help='output directory')
 parser.add_argument('--gen_interval', type=int, default=100, help='Period for generation core testing')
-parser.add_argument('--save_interval', type=int, default=10000, help='')
+parser.add_argument('--save_interval', type=int, default=10000, help='Period for making checkpoint')
 
 args = parser.parse_args()
 
@@ -178,7 +178,7 @@ def main():
     print(args)
 
     # load datasets
-    train_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch_small/train')
+    train_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/train')
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=args.batch_size,
                               shuffle=True,
@@ -186,13 +186,18 @@ def main():
                               pin_memory=True)
     train_iter = iter(train_loader)
 
-    test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch_small/test')
+    test_dataset = RoomsRingCameraDataset('./data/rooms_ring_camera_torch/test')
     test_loader = DataLoader(dataset=test_dataset,
                              batch_size=args.batch_size,
                              shuffle=True,
                              num_workers=0,
                              pin_memory=True)
-    test_f_batch, test_c_batch = next(iter(test_loader))
+    test_iter = iter(test_loader)
+
+    # grab the first batch from the test loader (will be used for visualization throughout the process)
+    gen_f_batch, gen_c_batch = next(test_iter)
+    gen_f_batch = gen_f_batch.to(device)
+    gen_c_batch = gen_c_batch.to(device)
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
@@ -254,11 +259,12 @@ def main():
 
         # write summary
         if writer:
-            # ELBO & details
-            writer.add_scalar('ELBO', -elbo.mean(), s)
-            writer.add_scalar('KL Divergence', kl_div.mean(), s)
-            writer.add_scalar('Likelihood', likelihood.mean(), s)
-            writer.add_scalar('sigma', sigma_t, s)
+            writer.add_scalars('Train statistics', {
+                'ELBO (avg)': -elbo.mean(),
+                'KL Divergence (avg)': kl_div.mean(),
+                'Likelihood (avg)': likelihood.mean(),
+                'sigma (avg)': sigma_t
+            }, s)
 
         # back propagation
         (-elbo.mean()).backward()
@@ -268,13 +274,32 @@ def main():
         scheduler.step()
 
         with torch.no_grad():
-            
+
+            try:
+                test_f_batch, test_c_batch = next(test_iter)
+            except StopIteration:
+                test_iter = iter(test_loader)
+                test_f_batch, test_c_batch = next(test_iter)
+
+            test_f_batch = test_f_batch.to(device)
+            test_c_batch = test_c_batch.to(device)
+            x_test, v_test, x_q_test, v_q_test = sample_from_batch(test_f_batch, test_c_batch)
+
+            # evaluate ELBO on test set
+            elbo, kl_div, likelihood = model(x_test, v_test, x_q_test, v_q_test, sigma_t)
+
+            # write summary
+            # if writer:
+            #   writer.add_scalars('Test statistics', {
+            #        'ELBO (avg)': -elbo.mean(),
+            #        'KL Divergence (avg)': kl_div.mean(),
+            #        'Likelihood (avg)': likelihood.mean(),
+            #        'sigma (avg)': sigma_t
+            #    }, s)
+
             # test generation
             if (s+1) % args.gen_interval == 0:
-                test_f_batch = test_f_batch.to(device)
-                test_c_batch = test_c_batch.to(device)
-
-                x_test, v_test, x_q_test, v_q_test = sample_from_batch(test_f_batch, test_c_batch)
+                x_test, v_test, x_q_test, v_q_test = sample_from_batch(gen_f_batch, gen_c_batch)
                 pred = model.generate(x_test, v_test, v_q_test)
 
                 if writer:
