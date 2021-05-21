@@ -296,7 +296,7 @@ def main():
 
                 if writer:
                     writer.add_images('GT', x_q_test)
-                    writer.add_iamges('Prediction', pred)
+                    writer.add_images('Prediction', pred)
 
             # add checkpoint
             if (s+1) % args.save_interval == 0:
@@ -311,79 +311,7 @@ def main():
                 print('Saved {}'.format(filename))
     
     writer.close()
-
-    """
-    for epoch in range(args.n_epochs):
-        train_one_epoch(train_dataset, train_loader, test_dataset, test_loader, model, optimizer, scheduler, epoch, writer)
-
-        # forward
-        elbo, kl_div, likelihood = model(x, v, x_q, v_q, sigma_t)
-
-        # write summary
-        if writer:
-            writer.add_scalars('Train statistics', {
-                'ELBO (avg)': -elbo.mean(),
-                'KL Divergence (avg)': kl_div.mean(),
-                'Likelihood (avg)': likelihood.mean(),
-                'sigma (avg)': sigma_t
-            }, s)
-
-        # back propagation
-        (-elbo.mean()).backward()
-
-        # update optimizer, scheduler
-        optimizer.step()
-        scheduler.step()
-
-        with torch.no_grad():
-
-            try:
-                test_f_batch, test_c_batch = next(test_iter)
-            except StopIteration:
-                test_iter = iter(test_loader)
-                test_f_batch, test_c_batch = next(test_iter)
-
-            test_f_batch = test_f_batch.to(device)
-            test_c_batch = test_c_batch.to(device)
-            x_test, v_test, x_q_test, v_q_test = sample_from_batch(test_f_batch, test_c_batch)
-
-            # evaluate ELBO on test set
-            elbo, kl_div, likelihood = model(x_test, v_test, x_q_test, v_q_test, sigma_t)
-
-            # write summary
-            # if writer:
-            #   writer.add_scalars('Test statistics', {
-            #        'ELBO (avg)': -elbo.mean(),
-            #        'KL Divergence (avg)': kl_div.mean(),
-            #        'Likelihood (avg)': likelihood.mean(),
-            #        'sigma (avg)': sigma_t
-            #    }, s)
-
-            # test generation
-            if (s+1) % args.gen_interval == 0:
-                x_test, v_test, x_q_test, v_q_test = sample_from_batch(gen_f_batch, gen_c_batch)
-                pred = model.generate(x_test, v_test, v_q_test)
-
-                if writer:
-                    writer.add_images('GT', x_q_test, int(s / args.gen_interval))
-                    writer.add_images('Prediction', pred, int(s / args.gen_interval))
-
-            # save checkpoints
-            if (s+1) % args.save_interval == 0:
-                model_file = os.path.join(args.out_dir, 'model_{:d}.pt'.format(s+1))
-                torch.save({
-                    'step': s,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'scheduler_state_dict': scheduler.state_dict()
-                }, model_file)
-                print("Saved '{}'.".format(model_file))
-
-        # update pixel-variance
-        sigma_t = max(sigma_f + (sigma_i - sigma_f) * (1 - s / args.sigma_n), sigma_f)
-
-    writer.close()
-    """
+    
 
 if __name__ == '__main__':
     main()
