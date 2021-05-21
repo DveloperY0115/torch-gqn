@@ -295,8 +295,8 @@ def main():
                 pred = model.generate(x_test, v_test, v_q_test)
 
                 if writer:
-                    writer.add_images('GT', x_q_test)
-                    writer.add_images('Prediction', pred)
+                    writer.add_images('GT', x_q_test, s)
+                    writer.add_images('Prediction', pred, s)
 
             # add checkpoint
             if (s+1) % args.save_interval == 0:
@@ -311,7 +311,7 @@ def main():
                 print('Saved {}'.format(filename))
     
     writer.close()
-    
+
 
 if __name__ == '__main__':
     main()

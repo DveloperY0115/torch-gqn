@@ -71,15 +71,15 @@ class GQNCls(nn.Module):
         Returns: ELBO (Evidence Lower BOund) calculated from the input data
         """
 
-        B, *_ = x.size()
+        B, S, *_ = x.size()
 
         # Encode scenes
         if self.repr_architecture == 'Tower':
             r = x.new_zeros((B, 256, 16, 16))
         else:
             r = x.new_zeros((B, 256, 1, 1))
-        for b in range(B):
-            r[b] = self.repr_net(x[b, :], v[b, :])
+        for s in range(S):
+            r += self.repr_net(x[:, s], v[:, s])
 
         # initialize generation core states
         cell_g = x.new_zeros((B, 128, 16, 16))
