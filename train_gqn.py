@@ -29,7 +29,7 @@ parser.add_argument('--batch_size', type=int, default=36, help='input batch size
 parser.add_argument('--n_workers', type=int, default=0, help='number of data loading workers')
 
 # training parameters
-parser.add_argument('--max_step', type=int, default=2e6, help='maximum number of training steps')
+parser.add_argument('--max_step', type=int, default=1e6, help='maximum number of training steps')
 
 
 # model parameters
@@ -45,8 +45,8 @@ parser.add_argument('--mu_f', type=float, default=5e-5, help='final learning rat
 
 # pixel-wise variance
 parser.add_argument('--sigma_i', type=float, default=2.0, help='Pixel standard deviation initial value')
-parser.add_argument('--sigma_f', type=float, default=0.7, help='Pixel standard deviation final value')
-parser.add_argument('--sigma_n', type=int, default=2e5, help='Pixel standard deviation step size')
+parser.add_argument('--sigma_f', type=float, default=0.4, help='Pixel standard deviation final value')
+parser.add_argument('--sigma_n', type=int, default=1e6, help='Pixel standard deviation step size')
 
 # I/O parameters
 parser.add_argument('--checkpoint', type=str, default='', help='Path to checkpoint file')
@@ -268,7 +268,7 @@ def main():
         scheduler.step()
 
         # Pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)*(1 - s/(2e5)), args.sigma_f)
+        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)*(1 - s/(args.sigma_n)), args.sigma_f)
 
         # write summary
         if writer:
