@@ -196,11 +196,6 @@ def main():
                              num_workers=0,
                              pin_memory=True)
     test_iter = iter(test_loader)
-
-    # grab the first batch from the test loader (will be used for visualization throughout the process)
-    gen_f_batch, gen_c_batch = next(test_iter)
-    gen_f_batch = gen_f_batch.to(device)
-    gen_c_batch = gen_c_batch.to(device)
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
@@ -292,7 +287,7 @@ def main():
           
             # generate images and record
             if (s+1) % args.gen_interval == 0:
-                pred = model.generate(x_test, v_test, v_q_test)
+                pred = model.generate(x_test, v_test, v_q_test, sigma_t)
 
                 if writer:
                     writer.add_images('GT', x_q_test, s)

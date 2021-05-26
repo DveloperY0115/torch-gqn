@@ -52,11 +52,11 @@ class GQNCls(nn.Module):
             self.gen_net = nn.ModuleList([GenerationCore() for _ in range(self.L)])
             self.inf_net = nn.ModuleList([InferenceCore() for _ in range(self.L)])
 
+        # TODO: Add more complex CNN for better parametrization
         # additional networks for Gaussian latent variable sampling
         self.eta_pi = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
         self.eta_q = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
         self.eta_g = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
-
 
     def forward(self, x, v, x_q, v_q, sigma_t):
         """
@@ -134,9 +134,8 @@ class GQNCls(nn.Module):
         elbo += likelihood
 
         return elbo, total_kl_div, likelihood
-        
 
-    def generate(self, x, v, v_q):
+    def generate(self, x, v, v_q, sigma_t):
         """
         Generate target image given the sequence of images from the scene,
         camera extrinsic, and the query viewpoint
@@ -145,6 +144,7 @@ class GQNCls(nn.Module):
         - x: A Tensor of shape (B, S, W, H, C). Images from the single scene
         - v: A Tensor of shape (B, 7, 1, 1). Camera extrinsic corresponds to x
         - v_q: A Tensor of shape (B, 7, 1, 1). Query viewpoint
+        - sigma_t: A scalar. Annealed pixel-wise variance
 
         Returns:
         - A target image would been seen at the query viewpoint v_q
@@ -172,7 +172,7 @@ class GQNCls(nn.Module):
             pi = Normal(mean_pi, std_pi)
 
             # sample prior latent variable
-            z = pi.rsample()
+            z = pi.sample()
 
             # update generation core state
             if self.shared_core:
@@ -180,8 +180,8 @@ class GQNCls(nn.Module):
             else:
                 hidden_g, cell_g, u = self.gen_net[l](v_q, r, z, hidden_g, cell_g, u)
 
-        # sample observation from the final skip signal
-        mean = self.eta_g(u)
+        # image sample
+        img = Normal(self.eta_g(u), sigma_t).sample()
 
         # Return shape -> (B, 3, 64, 64)
-        return torch.clamp(mean, 0, 1)
+        return torch.clamp(img, 0, 1)
