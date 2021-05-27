@@ -57,124 +57,6 @@ parser.add_argument('--save_interval', type=int, default=10000, help='Period for
 
 args = parser.parse_args()
 
-# [Abandoned]
-def train_one_epoch(train_dataset, train_dataloader,
-                    test_dataset, test_dataloader,
-                    model, optimizer, scheduler, epoch=None, writer=None):
-    """
-    Train the model in one epoch
-    Generate images in every 1000 iteration
-
-    Args:
-    - dataset: Pytorch Dataset object.
-    - dataloader: Pytorch DataLoader object.
-    - model: Pytorch model object.
-    - optimizer: Pytorch optimizer object.
-    - scheduler: Pytorch scheduler object.
-    - epoch: Int. Index of current epoch
-    - writer: SummaryWriter object.
-    """
-
-    # initialize pixel-variance
-    sigma_t = args.sigma_i
-
-    total_elbo = 0
-
-    n_data = len(train_dataset)
-
-    # Create a progress bar
-    pbar = tqdm(total=n_data, leave=False)
-
-    epoch_str = '' if epoch is None else '[Epoch {}/{}]'.format(
-        str(epoch).zfill(len(str(args.n_epochs))), args.n_epochs)
-
-    generate_period = 10
-    save_period = 10000
-
-    for i, (f_batch, c_batch) in enumerate(train_dataloader):
-
-        f_batch = f_batch.to(device)
-        c_batch = c_batch.to(device)
-
-        # sample from batch
-        x, v, x_q, v_q = sample_from_batch(f_batch, c_batch, dataset='Room')
-
-        # initialize gradients
-        optimizer.zero_grad()
-
-        # compute ELBO & increment total elbo
-        elbo, kl_div, likelihood = model(x, v, x_q, v_q, sigma_t)
-
-        elbo = -torch.mean(elbo)
-        kl_div = kl_div.mean()
-        likelihood = likelihood.mean()
-
-        # back propagation
-        elbo.backward()
-        optimizer.step()
-
-        # update scheduler
-        scheduler.step()
-
-        # update pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f) * (1 - i / args.sigma_n), args.sigma_f)
-
-        batch_size = x.shape[0]
-        total_elbo += elbo
-
-        pbar.update(batch_size)
-
-        # generate images
-
-        if (i + 1) % generate_period == 0:
-            with torch.no_grad():
-                x_q, pred = generate_images(test_dataloader, model, sigma_t)
-
-                if writer:
-                    writer.add_images('GT', x_q, int(i / generate_period))
-                    writer.add_images('Prediction', pred, int(i / generate_period))
-
-        # save the model
-        if (i + 1) % save_period == 0:
-            model_file = os.path.join(
-                args.out_dir, 'model_{:d}-{:d}.pth'.format(i + 1, epoch))
-            torch.save(model.state_dict(), model_file)
-            print("Saved '{}'.".format(model_file))
-
-        # write summary
-        if writer:
-            # ELBO & details
-            writer.add_scalar('ELBO', elbo, i)
-            writer.add_scalar('KL Divergence', kl_div, i)
-            writer.add_scalar('Likelihood', likelihood, i)
-            writer.add_scalar('sigma', sigma_t, i)
-
-    pbar.close()
-    n_batch = n_data / args.batch_size
-    mean_elbo = total_elbo / n_batch
-    return mean_elbo
-
-# [Abandoned]
-def rotate_images(gt, pred):
-
-    num_imgs = gt.size()[0]
-    gt = gt.transpose(1, 3).numpy()
-    pred = pred.transpose(1, 3).numpy()
-
-    # rotate images
-    for i in range(num_imgs):
-        gt[i] = np.rot90(gt[i], 3)
-        pred[i] = np.rot90(pred[i], 3)
-
-    gt = torch.from_numpy(gt)
-    pred = torch.from_numpy(pred)
-
-    gt = gt.transpose(1, 3)
-    pred = pred.transpose(1, 3)
-
-    return gt, pred
-
-
 def main():
     # print parsed arguments
     print(args)
@@ -206,7 +88,7 @@ def main():
     optimizer = optim.Adam(
         model.parameters(), lr=args.mu_i,
         betas=(args.beta1, args.beta2),
-        eps=1e-08)
+        eps=args.eps)
 
     # configure scheduler
     scheduler = AnnealingStepLR(optimizer, args.mu_i, args.mu_f)
@@ -220,7 +102,7 @@ def main():
         checkpoint = torch.load(args.checkpoint)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler'])
         s_begin = checkpoint['step']
 
         model.train()
