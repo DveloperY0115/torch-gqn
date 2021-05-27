@@ -97,6 +97,12 @@ def main():
     # training step
     s_begin = 0
 
+    # Pixel-wise variance
+    sigma_i = args.sigma_i
+    sigma_f = args.sigma_f
+
+    sigma_t = sigma_i
+
     # ...or load an existing checkpoint
     if args.checkpoint != '':
         print('Loading checkpoint at: {}'.format(args.checkpoint))
@@ -105,6 +111,7 @@ def main():
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         s_begin = checkpoint['step']
+        sigma_t = checkpoint['sigma']
 
         model.train()
 
@@ -114,11 +121,6 @@ def main():
 
     # Tensorboard
     writer = SummaryWriter(args.out_dir)
-
-    sigma_i = args.sigma_i
-    sigma_f = args.sigma_f
-
-    sigma_t = sigma_i
 
     # training routine
     for s in tqdm(range(s_begin, int(args.max_step))):
@@ -181,6 +183,7 @@ def main():
                 filename = os.path.join(args.out_dir, '{}.tar'.format(s+1))
                 torch.save({
                     'step': s,
+                    'sigma': sigma_t,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler': scheduler.state_dict()
