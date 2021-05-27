@@ -55,7 +55,7 @@ class GQNCls(nn.Module):
         # additional networks for Gaussian latent variable sampling
         self.eta_pi = nn.Conv2d(128, 6, kernel_size=5, stride=1, padding=2)
         self.eta_q = nn.Conv2d(128, 6, kernel_size=5, stride=1, padding=2)
-        self.eta_g = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
+        self.eta_g = nn.Conv2d(128, 6, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x, v, x_q, v_q, sigma_t):
         """
@@ -123,13 +123,16 @@ class GQNCls(nn.Module):
             kl_div = kl_divergence(q, pi)
 
             # ELBO <- ELBO - KL(...)
-            elbo -= torch.sum(kl_div, dim=[1, 2, 3])
+            elbo -= torch.mean(kl_div, dim=[1, 2, 3])
 
         total_kl_div = elbo
 
         # calculate log likelihood contribution
-        mu = self.eta_g(u)
-        likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
+        # do we really need pixel-wise variance annealing?
+        mu, std = torch.split(self.eta_g(u), 3, dim=1)
+        std = torch.exp(0.5 * std)
+        
+        likelihood = torch.mean(Normal(mu, std).log_prob(x_q), dim=[1, 2, 3])
         elbo += likelihood
 
         return elbo, total_kl_div, likelihood
@@ -180,7 +183,10 @@ class GQNCls(nn.Module):
                 hidden_g, cell_g, u = self.gen_net[l](v_q, r, z, hidden_g, cell_g, u)
 
         # image sample
-        img = Normal(self.eta_g(u)).sample()
+        mean, std = torch.split(self.eta_g(u), 3, dim=1)
+        std = torch.exp(0.5 * std)
+
+        img = Normal(mean, std).sample()
 
         # Return shape -> (B, 3, 64, 64)
         return torch.clamp(img, 0, 1)
