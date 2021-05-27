@@ -172,7 +172,7 @@ def main():
           
             # generate images and record
             if (s+1) % args.gen_interval == 0:
-                pred = model.generate(x_test, v_test, v_q_test, sigma_t)
+                pred = model.generate(x_test, v_test, v_q_test)
 
                 if writer:
                     writer.add_images('GT', x_q_test, s)
