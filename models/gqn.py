@@ -52,11 +52,44 @@ class GQNCls(nn.Module):
             self.gen_net = nn.ModuleList([GenerationCore() for _ in range(self.L)])
             self.inf_net = nn.ModuleList([InferenceCore() for _ in range(self.L)])
 
-        # TODO: Add more complex CNN for better parametrization
+        class latentNetCls(nn.Module):
+
+            def __init__(self, output_std=False, **kwargs):
+                """
+                Simple CNN for estimating latent feature distribution
+
+                Args:
+                - output_std: Boolean. Determine whether the network output (mean, std) or (mean)
+                - kwargs: A dictionary containing additional arguments for Conv layer initialization
+                """
+
+                # parse arguments
+                if output_std:
+                    self.out_channel = 6    # first 3 for RGB mean, another 3 for RGB standard deviation
+                else:
+                    self.out_channel = 3    # first 3 for RGB mean, another 3 for RGB standard deviation
+
+                super(latentNetCls, self).__init__()
+
+                # Conv layers
+                self.conv_1 = nn.Conv2d(128, 64, **kwargs)
+                self.conv_2 = nn.Conv2d(64, 32, **kwargs)
+                self.conv_3 = nn.Conv2d(32, self.out_channel, **kwargs)
+
+                # Batch Norm layers
+                self.bn_1 = nn.BatchNorm2d(64)
+                self.bn_2 = nn.BatchNorm2d(32)
+
+            def forward(self, x):
+                x = self.bn_1(self.conv_1(x))
+                x = self.bn_2(self.conv_2(x))
+                x = self.conv_3(x)
+                return x
+
         # additional networks for Gaussian latent variable sampling
-        self.eta_pi = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
-        self.eta_q = nn.Conv2d(128, 3*2, kernel_size=5, stride=1, padding=2)
-        self.eta_g = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
+        self.eta_pi = latentNetCls(output_std=True, kernel_size=5, stride=1, padding=2)
+        self.eta_q = latentNetCls(output_std=True, kernel_size=5, stride=1, padding=2)
+        self.eta_g = latentNetCls(output_std=False, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x, v, x_q, v_q, sigma_t):
         """

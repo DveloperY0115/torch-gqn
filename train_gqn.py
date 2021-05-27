@@ -57,6 +57,7 @@ parser.add_argument('--save_interval', type=int, default=10000, help='Period for
 
 args = parser.parse_args()
 
+
 def main():
     # print parsed arguments
     print(args)
