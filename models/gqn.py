@@ -128,13 +128,13 @@ class GQNCls(nn.Module):
         total_kl_div = elbo
 
         # calculate log likelihood contribution
-        mu = torch.split(self.eta_g(u), 3, dim=1)
+        mu = self.eta_g(u)
         likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
         elbo += likelihood
 
         return elbo, total_kl_div, likelihood
 
-    def generate(self, x, v, v_q, sigma_t):
+    def generate(self, x, v, v_q):
         """
         Generate target image given the sequence of images from the scene,
         camera extrinsic, and the query viewpoint
