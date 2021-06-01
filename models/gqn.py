@@ -72,22 +72,24 @@ class GQNCls(nn.Module):
 
         B, S, *_ = x.size()
 
+        device = x.device
+
         # Encode scenes
         if self.repr_architecture == 'Tower':
-            r = x.new_zeros((B, 256, 16, 16))
+            r = torch.zeros((B, 256, 16, 16), device=device)
         else:
-            r = x.new_zeros((B, 256, 1, 1))
+            r = torch.zeros((B, 256, 1, 1), device=device)
         for s in range(S):
-            r += self.repr_net(x[:, s], v[:, s])
+            r += self.repr_net(x[:, s, :, :, :], v[:, s, :, :, :])
 
         # initialize generation core states
-        cell_g = x.new_zeros((B, 128, 16, 16))
-        hidden_g = x.new_zeros((B, 128, 16, 16))
-        u = x.new_zeros((B, 128, 64, 64))
+        cell_g = torch.zeros((B, 128, 16, 16), device=device)
+        hidden_g = torch.zeros((B, 128, 16, 16), device=device)
+        u = torch.zeros((B, 128, 64, 64), device=device)
 
         # initialize inference core states
-        cell_e = x.new_zeros((B, 128, 16, 16))
-        hidden_e = x.new_zeros((B, 128, 16, 16))
+        cell_e = torch.zeros((B, 128, 16, 16), device=device)
+        hidden_e = torch.zeros((B, 128, 16, 16), device=device)
 
         # initialize ELBO
         elbo = 0
@@ -151,18 +153,20 @@ class GQNCls(nn.Module):
 
         B, S, *_ = x.size()
 
+        device = x.device
+
         # Encode scenes
         if self.repr_architecture == 'Tower':
-            r = x.new_zeros((B, 256, 16, 16))
+            r = torch.zeros((B, 256, 16, 16), device=device)
         else:
-            r = x.new_zeros((B, 256, 1, 1))
+            r = torch.zeros((B, 256, 1, 1), device=device)
         for s in range(S):
-            r += self.repr_net(x[:, s], v[:, s])
+            r += self.repr_net(x[:, s, :, :, :], v[:, s, :, :, :])
 
         # initialize generation core states
-        cell_g = x.new_zeros((B, 128, 16, 16))
-        hidden_g = x.new_zeros((B, 128, 16, 16))
-        u = x.new_zeros((B, 128, 64, 64))
+        cell_g = torch.zeros((B, 128, 16, 16), device=device)
+        hidden_g = torch.zeros((B, 128, 16, 16), device=device)
+        u = torch.zeros((B, 128, 64, 64), device=device)
 
         for l in range(self.L):
             # prior factor
