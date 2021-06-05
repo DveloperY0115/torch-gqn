@@ -49,8 +49,8 @@ parser.add_argument('--sigma_f', type=float, default=0.4, help='Pixel standard d
 parser.add_argument('--sigma_n', type=int, default=1e6, help='Pixel standard deviation step size')
 
 # I/O parameters
-parser.add_argument('--checkpoint', type=str, default='', help='Path to checkpoint file')
-parser.add_argument('--out_dir', type=str, default='outputs',
+parser.add_argument('--checkpoint', type=str, default='./run_20210527/510000.tar', help='Path to checkpoint file')
+parser.add_argument('--out_dir', type=str, default='./run_20210527',
                     help='output directory')
 parser.add_argument('--gen_interval', type=int, default=100, help='Period for generation core testing')
 parser.add_argument('--save_interval', type=int, default=10000, help='Period for making checkpoint')
@@ -82,6 +82,8 @@ def main():
     
     # construct model
     model = GQNCls(repr_architecture='Tower', L=args.level, shared_core=args.shared_core)
+    
+    # send model to GPU
     if torch.cuda.is_available():
         model.cuda()
 
@@ -111,7 +113,6 @@ def main():
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         s_begin = checkpoint['step']
-        sigma_t = checkpoint['sigma']
 
         model.train()
 
@@ -148,7 +149,7 @@ def main():
         scheduler.step()
 
         # Pixel-variance annealing
-        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f)*(1 - s/(args.sigma_n)), args.sigma_f)
+        sigma_t = max(args.sigma_f + (args.sigma_i - args.sigma_f) * (1 - s/(args.sigma_n)), args.sigma_f)
 
         # write summary
         if writer:

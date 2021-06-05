@@ -125,13 +125,15 @@ class GQNCls(nn.Module):
             kl_div = kl_divergence(q, pi)
 
             # ELBO <- ELBO - KL(...)
-            elbo -= torch.sum(kl_div, dim=[1, 2, 3])
+            # elbo -= torch.sum(kl_div, dim=[1, 2, 3])
+            elbo -= kl_div.sum(dim=[1, 2, 3])
 
         total_kl_div = elbo
 
         # calculate log likelihood contribution
         mu = self.eta_g(u)
-        likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
+        # likelihood = torch.sum(Normal(mu, sigma_t).log_prob(x_q), dim=[1, 2, 3])
+        likelihood = Normal(mu, sigma_t).log_prob(x_q).sum(dim=[1, 2, 3])
         elbo += likelihood
 
         return elbo, total_kl_div, likelihood
