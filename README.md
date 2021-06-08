@@ -9,8 +9,7 @@ Pytorch implementation of GQN, *Generative Query Network* proposed in the paper 
 ![Overall Structure of GQN](./media/gqn_overall.png)
 
 # Generation Output
-The following figures are side-by-side comparisons of prediction and ground-truth.  
-The left one is the prediction from GQN after 400k iterations, and the right image is the ground-truth.  
+The following figures are side-by-side comparisons of prediction and ground-truth. **The left one is the prediction from GQN after 400k iterations, and the right image is the ground-truth.**  
 <img src="./media/pred_400k.png" alt="Prediction (400K Iterations, ~ 4 Days)" width="250">
 <img src="./media/gt_400k.png" alt="Ground Truth" width="250"/>
 
