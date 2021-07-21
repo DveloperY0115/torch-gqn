@@ -43,12 +43,3 @@ Again in the project root directory, execute the following code fragment:
 python train_gqn.py
 ```
 You can adjust parameters associated with training (+ hyperparameters) via argument parser on the top of the `train_gqn.py` file.
-
-# Pre-trained model
-I provide you 
-[(2.3 GB) Pre-trained model + Checkpoint](https://drive.google.com/file/d/1iZj4c5Bv6mZ5iaOIdJ7pQZYMrk0Qkw5b/view?usp=sharing) at 500k-th iteration.
-The file on the drive contains
-- Pre-trained parameters of GQN model
-- Additional information to continue training (optimizer parameters, scheduler parameters, etc..)
-
-To use this, you'll need to get & convert **rooms_ring_camera** dataset following the instructions in 1 and 2. And then simply pass the path of *.tar* file to the *argparser* in *train_gqn.py*. Then you'll be able to check the training statistics and generation outputs via Tensorboard.
